@@ -1,5 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS AUTO</title>
+<style>
+body{margin:0;background:#0f0f0f;color:white;font-family:Arial;overflow:hidden;user-select:none}
+#hud{position:absolute;top:0;left:0;width:100%;background:rgba(0,0,0,0.8);padding:10px;display:flex;justify-content:space-between;font-size:18px;font-weight:bold;z-index:10}
+#game{width:100vw;height:100vh;background: radial-gradient(#3a3a3a, #111);position:relative;cursor:none}
+.enemy{position:absolute;width:70px;height:90px;background:linear-gradient(#ffcc00,#ff9900);border:3px solid #000;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:30px;color:black;font-weight:bold}
+.head{position:absolute;top:-15px;width:35px;height:35px;background:#ffcc00;border-radius:50%;border:2px solid black;left:17px}
+#gun{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:320px;height:120px;background:linear-gradient(#444,#222);border-top:5px solid #666;border-radius:20px 20px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;pointer-events:none}
+#cross{position:absolute;width:30px;height:30px;pointer-events:none;z-index:20;transform:translate(-50%,-50%)}
+#cross:before{content:"+";color:red;font-size:30px;font-weight:bold}
+.flash{animation:flash 0.05s}
+@keyframes flash{background:white}
+</style>
+</head>
+<body>
+<div id="hud"><div>СЧЕТ: <span id="score">0</span></div><div>АК-47: <span id="ammo">30/90</span></div></div>
+<div id="game"><div id="cross"></div><div id="gun">🔫 АК-47 [ЗАЖМИ МЫШЬ]</div></div>
+<script>
+let score=0, ammo=30, reserve=90, firing=false, fireInt
+const game=document.getElementById('game'), scoreEl=document.getElementById('score'), ammoEl=document.getElementById('ammo'), cross=document.getElementById('cross'), gun=document.getElementById('gun')
 
+document.addEventListener('mousemove',e=>{cross.style.left=e.clientX+'px'; cross.style.top=e.clientY+'px'})
 
+function updateAmmo(){ ammoEl.textContent=ammo+'/'+reserve }
+
+function spawn(){
+  const wrap=document.createElement('div'); wrap.className='enemy'
+  wrap.style.left=Math.random()*(innerWidth-80)+'px'; wrap.style.top=Math.random()*(innerHeight-200)+50+'px'
+  wrap.innerHTML='<div class="head"></div>-'
+  game.appendChild(wrap)
+  setTimeout(()=>{if(wrap.parentNode) wrap.remove()},2500)
+}
+
+function shoot(){
+  if(ammo<=0){
+    if(reserve>0){ammo=30; reserve-=30; updateAmmo(); gun.textContent='ПЕРЕЗАРЯДКА!'; setTimeout(()=>gun.textContent='🔫 АК-47 [ЗАЖМИ МЫШЬ]',500)} 
+    return
+  }
+  ammo--; updateAmmo()
+  gun.classList.add('flash'); setTimeout(()=>gun.classList.remove('flash'),50)
+  const x=parseInt(cross.style.left)||innerWidth/2, y=parseInt(cross.style.top)||innerHeight/2
+  const els=document.elementsFromPoint(x,y)
+  const enemy=els.find(el=>el.classList.contains('enemy')||el.classList.contains('head'))
+  if(enemy){
+    const target=enemy.classList.contains('head')?enemy.parentNode:enemy
+    score+=enemy.classList.contains('head')?20:10
+    scoreEl.textContent=score
+    target.style.background='red'
+    target.style.transform='scale(0)'
+    setTimeout(()=>target.remove(),150)
+  }
+}
+
+game.addEventListener('mousedown',()=>{firing=true; shoot(); fireInt=setInterval(shoot,100)})
+game.addEventListener('mouseup',()=>{firing=false; clearInterval(fireInt)})
+setInterval(spawn,700)
+updateAmmo()
+</script>
+</body>
+</html>
   
 
 
