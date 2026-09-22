@@ -1,61 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CS MOBILE</title>
-<style>
-body { margin:0; background:#111; overflow:hidden; font-family: Arial; }
-#hud { position:fixed; top:10px; left:10px; color:white; font-size:22px; font-weight:bold; }
-canvas { display:block; margin:0 auto; background:#2b2b2b; cursor:crosshair; }
-</style>
-</head>
-<body>
-<div id="hud">СЧЕТ: <span id="score">0</span></div>
-<canvas id="game" width="800" height="600"></canvas>
-<script>
-let c = document.getElementById('game');
-let ctx = c.getContext('2d');
-let score = 0;
-let enemies = [];
-function spawn() {
-  enemies.push({ x: Math.random()*700+50, y: Math.random()*400+50, r: 35 });
-}
-for(let i=0;i<5;i++) spawn();
-c.addEventListener('click', (e)=>{
-  let r = c.getBoundingClientRect();
-  let mx = e.clientX - r.left;
-  let my = e.clientY - r.top;
-  enemies = enemies.filter(en=>{
-    if(Math.hypot(en.x-mx, en.y-my) < en.r + 15){
-      score++;
-      document.getElementById('score').innerText = score;
-      setTimeout(spawn, 300);
-      return false;
-    }
-    return true;
-  });
-});
-function draw(){
-  ctx.clearRect(0,0,800,600);
-  // пол
-  ctx.fillStyle = "#3a3a3a";
-  ctx.fillRect(0,500,800,100);
-  // враги
-  enemies.forEach(en=>{
-    ctx.fillStyle = "orange";
-    ctx.beginPath();
-    ctx.arc(en.x,en.y,en.r,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = "black";
-    ctx.fillRect(en.x-8, en.y-4, 16, 6);
-  });
-  requestAnimationFrame(draw);
-}
-draw();
-</script>
-</body>
-</html>   
+
+
+  
 
 
 
