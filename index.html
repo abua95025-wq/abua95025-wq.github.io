@@ -2,76 +2,91 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CS AK-47 AUTO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Змейка</title>
 <style>
-body{margin:0;background:#1a1a1a;color:white;font-family:Arial;overflow:hidden}
-#top{position:absolute;top:0;left:0;width:100%;background:black;padding:12px 20px;display:flex;justify-content:space-between;font-size:20px;font-weight:bold;box-sizing:border-box;z-index:10}
-#game{width:100vw;height:100vh;background:radial-gradient(#333,#111);position:relative;cursor:none}
-.enemy{position:absolute;width:75px;height:75px;background:gold;border:3px solid black;border-radius:50%;display:flex;align-items:center;justify-content:center;color:black;font-size:35px;font-weight:bold}
-#gun{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:50px;pointer-events:none}
-#cross{position:absolute;pointer-events:none;z-index:20;font-size:28px;color:red;font-weight:bold;transform:translate(-50%,-50%)}
+body{margin:0;background:#111;color:white;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column}
+#top{display:flex;gap:20px;font-size:20px;margin-bottom:10px}
+canvas{background:#1a1a2e;border:3px solid white;border-radius:10px}
+#start{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10}
+#play{padding:15px 50px;font-size:30px;background:lime;border:none;border-radius:30px;font-weight:bold}
+#controls{margin-top:10px;display:grid;grid-template-columns:60px 60px 60px;gap:5px}
+#controls button{width:60px;height:60px;font-size:25px;background:#333;color:white;border:2px solid white;border-radius:10px}
 </style>
 </head>
 <body>
-<div id="top"><div>СЧЕТ: <span id="score">0</span></div><div>АК-47: <span id="ammo">30/90</span></div></div>
-<div id="game">
-<div id="cross">+</div>
-<div id="gun">🔫</div>
+<div id="top"><span>Время:<b id="tm">20</b></span><span>Очки:<b id="sc">0</b>/400</span></div>
+<canvas id="c" width="360" height="360"></canvas>
+<div id="controls">
+<div></div><button onclick="dir(0,-1)">↑</button><div></div>
+<button onclick="dir(-1,0)">←</button><button onclick="dir(0,1)">↓</button><button onclick="dir(1,0)">→</button>
 </div>
+
+<div id="start">
+<h1>🐍 ЗМЕЙКА</h1>
+<p>Набери 400 очков за 20 секунд!</p>
+<button id="play">PLAY</button>
+<h2 id="msg"></h2>
+</div>
+
 <script>
-let score=0, ammo=30, reserve=90, isFiring=false, fireLoop
-const scoreEl=document.getElementById('score')
-const ammoEl=document.getElementById('ammo')
-const game=document.getElementById('game')
-const cross=document.getElementById('cross')
+let canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let scEl=document.getElementById('sc'),tmEl=document.getElementById('tm');
+let start=document.getElementById('start'),msg=document.getElementById('msg');
+let snake,food,dx,dy,score,time,loop,timer,playing=false;
+let grid=18,size=20;
 
-document.addEventListener('mousemove', e=>{
-  cross.style.left=e.clientX+'px'
-  cross.style.top=e.clientY+'px'
-})
-
-function updateAmmo(){ ammoEl.textContent=ammo+'/'+reserve }
-
-function spawnEnemy(){
-  const el=document.createElement('div')
-  el.className='enemy'
-  el.textContent='-'
-  el.style.left=Math.random()*(window.innerWidth-80)+'px'
-  el.style.top=Math.random()*(window.innerHeight-150)+70+'px'
-  game.appendChild(el)
-  setTimeout(()=>{ if(el.parentNode) el.remove() }, 2500)
+function init(){
+ snake=[{x:9,y:9}];food={x:5,y:5};dx=1;dy=0;score=0;time=20;
+ scEl.textContent=0;tmEl.textContent=20;
 }
 
-function shoot(){
-  if(ammo<=0){
-    if(reserve>0){ ammo=30; reserve-=30; updateAmmo() }
-    return
-  }
-  ammo--; updateAmmo()
-  const x=parseInt(cross.style.left)
-  const y=parseInt(cross.style.top)
-  const under=document.elementsFromPoint(x,y)
-  const target=under.find(e=>e.classList.contains('enemy'))
-  if(target){
-    score+=10
-    scoreEl.textContent=score
-    target.remove()
-  }
+function randFood(){
+ food={x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};
 }
 
-game.addEventListener('mousedown', ()=>{
-  isFiring=true
-  shoot()
-  fireLoop=setInterval(shoot, 80)
-})
-game.addEventListener('mouseup', ()=>{
-  isFiring=false
-  clearInterval(fireLoop)
-})
+function draw(){
+ ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,360,360);
+ ctx.fillStyle='red';ctx.fillRect(food.x*size,food.y*size,size-2,size-2);
+ ctx.fillStyle='lime';
+ snake.forEach(s=>{ctx.fillRect(s.x*size,s.y*size,size-2,size-2);});
+}
 
-setInterval(spawnEnemy, 700)
-updateAmmo()
+function move(){
+ let head={x:snake[0].x+dx,y:snake[0].y+dy};
+ if(head.x<0)head.x=grid-1;if(head.x>=grid)head.x=0;
+ if(head.y<0)head.y=grid-1;if(head.y>=grid)head.y=0;
+ if(snake.some(s=>s.x==head.x&&s.y==head.y)){end();return;}
+ snake.unshift(head);
+ if(head.x==food.x&&head.y==food.y){score+=20;scEl.textContent=score;randFood();}
+ else{snake.pop();}
+ draw();
+}
+
+function dir(x,y){
+ if(dx==-x&&dy==-y)return;
+ dx=x;dy=y;
+}
+
+document.getElementById('play').onclick=()=>{
+ init();randFood();draw();start.style.display='none';playing=true;
+ loop=setInterval(move,90);
+ timer=setInterval(()=>{time--;tmEl.textContent=time;if(time<=0)end();},1000);
+};
+
+function end(){
+ playing=false;clearInterval(loop);clearInterval(timer);
+ start.style.display='flex';
+ if(score>=400){msg.textContent='ПОБЕДА! '+score;document.getElementById('play').textContent='ЕЩЕ РАЗ';}
+ else{msg.textContent='Проиграл: '+score+'/400';document.getElementById('play').textContent='СНОВА';}
+}
+
+document.addEventListener('keydown',e=>{
+ if(e.key=='ArrowUp')dir(0,-1);
+ if(e.key=='ArrowDown')dir(0,1);
+ if(e.key=='ArrowLeft')dir(-1,0);
+ if(e.key=='ArrowRight')dir(1,0);
+});
 </script>
 </body>
 </html>
