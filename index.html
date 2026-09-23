@@ -1,43 +1,100 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Змейка</title>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1, user-scalable=no">
+<title>ЗМЕЙКА</title>
 <style>
-body{margin:0;background:#111;color:#fff;font-family:Arial;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column}
-#top{display:flex;gap:12px;margin-bottom:8px}
-canvas{background:#1a1a2e;border:3px solid #fff;border-radius:10px}
-#start{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99}
+body{margin:0;background:#111;color:#fff;font-family:Arial;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+#top{display:flex;gap:12px;margin-bottom:8px;font-weight:bold}
+canvas{background:#1a1a2e;border:3px solid #fff;border-radius:10px;max-width:90vw;max-height:60vw}
+#start{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
 #levels{display:flex;gap:8px;margin:12px}
-#levels button{padding:10px 12px;border:2px solid #fff;background:#333;color:#fff;border-radius:10px}
+#levels button{padding:10px 12px;border:2px solid #fff;background:#333;color:#fff;border-radius:10px;font-weight:bold}
 #levels button.active{background:lime;color:#000}
-#play{padding:15px 50px;font-size:28px;background:lime;border:0;border-radius:30px;font-weight:bold}
-</style></head><body>
-<div id="top"><span>⏱<b id="tm">30</b></span><span>⭐<b id="sc">0</b>/300</span><span>🏆<b id="rec">0</b></span><span id="ls">🟢 Легкий</span></div>
+#play{padding:15px 60px;font-size:20px;background:lime;border:0;border-radius:30px;font-weight:bold;margin-top:10px}
+#controls{margin-top:15px;display:grid;grid-template-columns:60px 60px 60px;gap:8px;justify-content:center}
+#controls button{width:60px;height:60px;background:#222;color:#fff;border:2px solid #444;border-radius:12px;font-size:24px}
+#controls button:active{background:lime;color:#000}
+@media(min-width:700px){#controls{display:none}}
+</style>
+</head>
+<body>
+<div id="top"><span>⏱️ <b id="tm">30</b></span><span>⭐ <b id="sc">0</b>/300</span><span>🏆 <b id="rec">0</b></span><span id="js">0</span></div>
 <canvas id="c" width="360" height="360"></canvas>
 <div id="start">
 <h1>🐍 ЗМЕЙКА</h1>
-<p>ВЫБЕРИ СКОРОСТЬ:</p>
+<p><b>ВЫБЕРИ СКОРОСТЬ:</b></p>
 <div id="levels">
 <button id="b1" class="active" onclick="setLevel(1)">ЛЕГКАЯ</button>
 <button id="b2" onclick="setLevel(2)">СРЕДНЯЯ</button>
 <button id="b3" onclick="setLevel(3)">ЭКСТРИМ</button>
 </div>
-<p>Набери 300 за 30 сек</p>
+<p>Набери 300 за 30 сек!</p>
 <p>Рекорд: <b id="rec2">0</b></p>
-<button id="play">PLAY</button>
+<button id="play" onclick="startGame()">PLAY</button>
 <h2 id="msg"></h2>
+
+<div id="controls">
+<div></div><button onclick="dirF(0,-1)">↑</button><div></div>
+<button onclick="dirF(-1,0)">←</button><button onclick="dirF(0,1)">↓</button><button onclick="dirF(1,0)">→</button>
 </div>
+
+</div>
+
 <script>
-let c=document.getElementById('c'),ctx=c.getContext('2d'),sc=document.getElementById('sc'),tm=document.getElementById('tm'),re=document.getElementById('rec'),re2=document.getElementById('rec2'),st=document.getElementById('start'),mg=document.getElementById('msg'),ls=document.getElementById('ls');
-let snake,food,dx,dy,score,time,loop,timer,level=1,speed=150,grid=18,size=20;
-let record=localStorage.getItem('r')?+localStorage.getItem('r'):0; re.textContent=record; re2.textContent=record;
-function setLevel(l){level=l; document.querySelectorAll('#levels button').forEach(b=>b.classList.remove('active')); document.getElementById('b'+l).classList.add('active'); if(l==1){speed=150; ls.textContent='🟢 Легкий'} if(l==2){speed=90; ls.textContent='🟡 Средний'} if(l==3){speed=45; ls.textContent='🔴 Экстрим'}}
-function init(){snake=[{x:9,y:9}];food={x:5,y:5};dx=1;dy=0;score=0;time=30; sc.textContent=0; tm.textContent=30;}
+let c=document.getElementById('c'),ctx=c.getContext('2d'),sc=document.getElementById('sc'),tm=document.getElementById('tm'),rc=document.getElementById('rec'),rc2=document.getElementById('rec2');
+let snake,food,dx,dy,score,time,loop,level=1,speed=100,grid=20,size=18,timer;
+let record=localStorage.getItem('snakeRec')||0; rc.innerText=record; rc2.innerText=record;
+
+function setLevel(l){level=l; document.querySelectorAll('#levels button').forEach(b=>b.classList.remove('active')); document.getElementById('b'+l).classList.add('active')}
+
 function rf(){food={x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)}}
-function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,360,360); ctx.fillStyle='red';ctx.fillRect(food.x*size,food.y*size,size-2,size-2); ctx.fillStyle='lime';snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-2,size-2))}
-function mv(){let h={x:snake[0].x+dx,y:snake[0].y+dy}; if(h.x<0)h.x=17;if(h.x>17)h.x=0;if(h.y<0)h.y=17;if(h.y>17)h.y=0; if(snake.some(s=>s.x==h.x&&s.y==h.y))return end(); snake.unshift(h); if(h.x==food.x&&h.y==food.y){score+=20;sc.textContent=score;rf()}else snake.pop(); draw()}
-function dir(x,y){if(dx==-x&&dy==-y)return;dx=x;dy=y;}
-document.getElementById('play').onclick=()=>{init();rf();draw();st.style.display='none'; loop=setInterval(mv,speed); timer=setInterval(()=>{time--;tm.textContent=time; if(time<=0)end()},1000)}
-function end(){clearInterval(loop);clearInterval(timer); st.style.display='flex'; if(score>record){record=score; localStorage.setItem('r',record); re.textContent=record; re2.textContent=record;} if(score>=300){mg.innerHTML='МОЛОДЕЦ ТЫ СПРАВИЛСЯ! 🎉<br>'+score+'<br>'+(score==record?'🏆 НОВЫЙ РЕКОРД!':'')}else mg.innerHTML='Проиграл: '+score+'/300'}
-document.addEventListener('keydown',e=>{if(e.key=='ArrowUp')dir(0,-1); if(e.key=='ArrowDown')dir(0,1); if(e.key=='ArrowLeft')dir(-1,0); if(e.key=='ArrowRight')dir(1,0)});
-setLevel(1);
-</script></body></html>
+
+function dirF(x,y){ if(dx!=-x || dy!=-y){ dx=x; dy=y; } }
+
+function startGame(){
+ document.getElementById('start').style.display='none';
+ document.getElementById('msg').innerText='';
+ snake=[{x:9,y:9}]; dx=1; dy=0; score=0; time=30;
+ if(level==1)speed=150; if(level==2)speed=100; if(level==3)speed=60;
+ rf(); sc.innerText=0; tm.innerText=30;
+ clearInterval(loop); clearInterval(timer);
+ loop=setInterval(draw, speed);
+ timer=setInterval(()=>{
+  time--; tm.innerText=time;
+  if(time<=0){ winOrLose() }
+ },1000);
+}
+function winOrLose(){
+ clearInterval(loop); clearInterval(timer);
+ document.getElementById('start').style.display='flex';
+ if(score>=300){ document.getElementById('msg').innerText='🏆 ПОБЕДА!'; } else { document.getElementById('msg').innerText='💀 Время вышло! Набрал '+score; }
+ if(score>record){record=score; localStorage.setItem('snakeRec',record); rc.innerText=record; rc2.innerText=record;}
+}
+function draw(){
+ let head={x:snake[0].x+dx,y:snake[0].y+dy};
+ if(head.x<0)head.x=grid-1; if(head.x>=grid)head.x=0; if(head.y<0)head.y=grid-1; if(head.y>=grid)head.y=0;
+ if(snake.some(s=>s.x==head.x&&s.y==head.y)){ clearInterval(loop); clearInterval(timer); document.getElementById('start').style.display='flex'; document.getElementById('msg').innerText='💀 Съел себя! Очки: '+score; if(score>record){record=score; localStorage.setItem('snakeRec',record); rc.innerText=record; rc2.innerText=record;} return; }
+ snake.unshift(head);
+ if(head.x==food.x&&head.y==food.y){ score+=10; sc.innerText=score; if(score>=300){ winOrLose(); return; } rf(); } else snake.pop();
+
+ ctx.fillStyle='#1a1a2e'; ctx.fillRect(0,0,360,360);
+ ctx.fillStyle='red'; ctx.fillRect(food.x*size,food.y*size,size-2,size-2);
+ ctx.fillStyle='lime'; snake.forEach((s,i)=>{ ctx.fillStyle=i==0?'#8fff8f':'lime'; ctx.fillRect(s.x*size,s.y*size,size-2,size-2); });
+}
+// комп - клавиатура
+document.addEventListener('keydown',e=>{
+ if(e.key=='ArrowUp'||e.key=='w') dirF(0,-1);
+ if(e.key=='ArrowDown'||e.key=='s') dirF(0,1);
+ if(e.key=='ArrowLeft'||e.key=='a') dirF(-1,0);
+ if(e.key=='ArrowRight'||e.key=='d') dirF(1,0);
+});
+// телефон - свайп
+let sx,sy;
+c.addEventListener('touchstart',e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY; });
+c.addEventListener('touchend',e=>{
+ let dx2=e.changedTouches[0].clientX-sx, dy2=e.changedTouches[0].clientY-sy;
+ if(Math.abs(dx2)>Math.abs(dy2)){ if(dx2>0) dirF(1,0); else dirF(-1,0); }
+ else { if(dy2>0) dirF(0,1); else dirF(0,-1); }
+});
+</script>
+</body>
+</html>
