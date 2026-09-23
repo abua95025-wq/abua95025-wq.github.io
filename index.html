@@ -1,137 +1,51 @@
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>ЗМЕЙКА PRO</title>
-<style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name=viewport content="width=device-width,initial-scale=1">
+<title>ЗМЕЙКА</title><style>
 body{margin:0;background:#000;color:#fff;font-family:Arial;display:flex;flex-direction:column;align-items:center}
-#top{width:100%;max-width:700px;display:flex;justify-content:space-around;background:#111;padding:15px 0;border-bottom:3px solid lime;position:sticky;top:0}
-#top b{font-size:28px;color:gold}
-#levels{margin:12px 0;display:flex;gap:10px}
-#levels button{padding:12px 20px;font-size:15px;border:3px solid #fff;background:#222;color:#fff;border-radius:14px;font-weight:bold}
-#levels button.active{background:lime;color:#000;border-color:lime}
-#speeds{margin:5px 0;display:flex;gap:8px}
-#speeds button{padding:8px 14px;border:2px solid #555;background:#222;color:#fff;border-radius:20px;font-size:12px}
-#speeds button.active{background:#fff;color:#000}
-canvas{background:#1e1e6b;border:5px solid #fff;border-radius:18px;width:620px;height:620px;max-width:95vw;max-height:95vw}
-#start{position:fixed;inset:0;background:#000000f2;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99;text-align:center}
-#play{padding:18px 80px;font-size:26px;background:lime;border:0;border-radius:40px;font-weight:bold}
-#controls{margin-top:15px;display:grid;grid-template-columns:70px 70px 70px;gap:10px}
-#controls button{width:70px;height:70px;background:#222;color:#fff;border:2px solid #555;border-radius:16px;font-size:28px}
-@media(min-width:800px){#controls{display:none}}
-</style>
-</head><body>
+#top{width:100%;max-width:700px;display:flex;justify-content:space-around;background:#111;padding:14px 0;border-bottom:3px solid lime}
+#top b{color:gold;font-size:28px}
+#lv{display:flex;gap:10px;margin:10px}
+#lv button{padding:10px 16px;border:2px solid #fff;background:#222;color:#fff;border-radius:12px;font-weight:bold}
+#lv button.on{background:lime;color:#000}
+canvas{background:#1e1e8a;border:5px solid #fff;border-radius:16px;width:600px;height:600px;max-width:95vw}
+#start{position:fixed;inset:0;background:#000000ee;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+#start button{padding:18px 70px;font-size:28px;background:lime;border:0;border-radius:30px;font-weight:bold}
+#ctrl{display:grid;grid-template-columns:70px 70px 70px;gap:10px;margin-top:10px}
+#ctrl button{width:70px;height:70px;background:#222;color:#fff;border:2px solid #555;border-radius:15px;font-size:28px}
+</style></head><body>
+<div id=top><span>⏱️ <b id=t>30</b></span><span>⭐ <b id=s>0</b></span><span>🏆 <b id=r>0</b></span></div>
+<div id=lv><button id=b1 class=on onclick="L(1)">🟢 ЛЕГКАЯ</button><button id=b2 onclick="L(2)">🔵 СРЕДНЯЯ</button><button id=b3 onclick="L(3)">🔴 ЭКСТРИМ</button></div>
+<canvas id=c width=600 height=600></canvas>
+<div id=ctrl><div></div><button onclick="D(0,-1)">↑</button><div></div><button onclick="D(-1,0)">←</button><button onclick="D(0,1)">↓</button><button onclick="D(1,0)">→</button></div>
 
-<div id="top"><span>⏱️ <b id="tm">30</b></span><span>⭐ <b id="sc">0</b></span><span>🏆 <b id="rec">0</b></span></div>
-
-<div id="levels">
-<button id="b1" class="active" onclick="setLevel(1)">🟢 ЛЕГКАЯ</button>
-<button id="b2" onclick="setLevel(2)">🔵 СРЕДНЯЯ</button>
-<button id="b3" onclick="setLevel(3)">🔴 ЭКСТРИМ</button>
-</div>
-
-<div id="speeds">
-<button id="s1" class="active" onclick="setSpeed(150,1)">🐢 150</button>
-<button id="s2" onclick="setSpeed(90,2)">⚡ 90</button>
-<button id="s3" onclick="setSpeed(50,3)">🔥 50</button>
-<button id="s4" onclick="setSpeed(90,4)">⏱️ 30сек</button>
-</div>
-
-<canvas id="c" width="600" height="600"></canvas>
-
-<div id="controls">
-<div></div><button onclick="goDir(0,-1)">↑</button><div></div>
-<button onclick="goDir(-1,0)">←</button><button onclick="goDir(0,1)">↓</button><button onclick="goDir(1,0)">→</button>
-</div>
-
-<div id="start">
-<h1 style="font-size:50px;margin:0">🐍 ЗМЕЙКА</h1>
-<p>Набери 300 очков за 30 сек!</p>
-<p>Рекорд: <b id="rec2" style="font-size:30px;color:gold">0</b></p>
-<button id="play" onclick="startGame()">▶ PLAY</button>
-<h2 id="msg" style="color:lime"></h2>
-</div>
+<div id=start><h1>🐍 ЗМЕЙКА</h1><p>Собери 300 очков за 30 сек!</p><p>Рекорд: <b id=r2 style="color:gold;font-size:28px">0</b></p><button onclick="start()">▶ PLAY</button><h2 id=msg></h2></div>
 
 <script>
-let c=document.getElementById('c'),ctx=c.getContext('2d');
-let tm=document.getElementById('tm'),sc=document.getElementById('sc'),recEl=document.getElementById('rec'),rec2=document.getElementById('rec2');
-let snake,food,dx,dy,score,time,loop,timer,level=1,speed=150,mode30=true;
-let grid=20,size=30;
-let record=localStorage.getItem('snakeRec')||0; recEl.innerText=record; rec2.innerText=record;
-
-function setLevel(l){level=l;document.querySelectorAll('#levels button').forEach(b=>b.classList.remove('active'));document.getElementById('b'+l).classList.add('active');}
-function setSpeed(s,n){speed=s;mode30=(n==4);document.querySelectorAll('#speeds button').forEach(b=>b.classList.remove('active'));document.getElementById('s'+n).classList.add('active');}
-function goDir(x,y){if(dx!=-x||dy!=-y){dx=x;dy=y;}}
-
-function newFood(){
-  do{food={x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)}}
-  while(snake && snake.some(p=>p.x==food.x&&p.y==food.y));
+let C=document.getElementById('c'),X=C.getContext('2d'),Tt=document.getElementById('t'),Ss=document.getElementById('s'),Rr=document.getElementById('r'),R2=document.getElementById('r2'),ST=document.getElementById('start'),MSG=document.getElementById('msg');
+let sn,fd,dx,dy,sc,ti,lv=1,rec=localStorage.getItem('rec')||0,loop,tmr;
+Rr.innerText=rec;R2.innerText=rec;
+function L(l){lv=l;document.querySelectorAll('#lv button').forEach(b=>b.classList.remove('on'));document.getElementById('b'+l).classList.add('on')}
+function D(x,y){if(dx!=-x||dy!=-y){dx=x;dy=y}}
+function NF(){do{fd={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)}}while(sn&&sn.some(p=>p.x==fd.x&&p.y==fd.y))}
+function start(){
+ST.style.display='none';sn=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];dx=1;dy=0;sc=0;ti=30;Ss.innerText=0;Tt.innerText=30;NF();
+clearInterval(loop);clearInterval(tmr);
+let sp=lv==1?150:lv==2?90:50;
+loop=setInterval(draw,sp);
+tmr=setInterval(()=>{ti--;Tt.innerText=ti;if(ti<=0){end('Время вышло! Очков: '+sc)}},1000);
 }
-
-function startGame(){
-  document.getElementById('start').style.display='none';
-  snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
-  dx=1;dy=0;score=0;time=30;
-  sc.innerText=0; tm.innerText=mode30?30:'∞';
-  newFood();
-  clearInterval(loop);clearInterval(timer);
-  let curSpeed = level==1?150:level==2?90:50;
-  if(mode30) curSpeed=speed;
-  loop=setInterval(draw,curSpeed);
-  if(mode30){
-    timer=setInterval(()=>{time--;tm.innerText=time;if(time<=0){endGame();}},1000);
-  }
-}
-
-function endGame(){
-  clearInterval(loop);clearInterval(timer);
-  document.getElementById('start').style.display='flex';
-  let m=document.getElementById('msg');
-  if(score>=300) m.innerText='🏆 ПОБЕДА! '+score+' очков';
-  else m.innerText='⏱️ Время! Очков: '+score;
-  if(score>record){record=score;localStorage.setItem('snakeRec',record);recEl.innerText=record;rec2.innerText=record;}
-}
-
+function end(txt){clearInterval(loop);clearInterval(tmr);ST.style.display='flex';MSG.innerText=txt;if(sc>rec){rec=sc;localStorage.setItem('rec',rec);Rr.innerText=rec;R2.innerText=rec}}
 function draw(){
-  let head={x:snake[0].x+dx,y:snake[0].y+dy};
-  if(head.x<0) head.x=grid-1; if(head.x>=grid) head.x=0;
-  if(head.y<0) head.y=grid-1; if(head.y>=grid) head.y=0;
-  if(snake.some(s=>s.x==head.x&&s.y==head.y)){
-    clearInterval(loop);clearInterval(timer);
-    document.getElementById('start').style.display='flex';
-    document.getElementById('msg').innerText='💀 Съел себя! '+score;
-    if(score>record){record=score;localStorage.setItem('snakeRec',record);recEl.innerText=record;rec2.innerText=record;}
-    return;
-  }
-  snake.unshift(head);
-  if(head.x==food.x&&head.y==food.y){score+=10+level*2;sc.innerText=score;if(score>=300&&mode30){endGame();return;} newFood();}
-  else{snake.pop();}
-
-  ctx.fillStyle='#1e1e6b';ctx.fillRect(0,0,600,600);
-  // сетка
-  ctx.strokeStyle='#2a2a8a';ctx.lineWidth=1;
-  for(let i=0;i<=grid;i++){ctx.beginPath();ctx.moveTo(i*size,0);ctx.lineTo(i*size,600);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*size);ctx.lineTo(600,i*size);ctx.stroke();}
-  // ЕДА - ОГРОМНАЯ
-  ctx.fillStyle='yellow';ctx.fillRect(food.x*size+2,food.y*size+2,size-4,size-4);
-  ctx.fillStyle='red';ctx.fillRect(food.x*size+8,food.y*size+8,size-16,size-16);
-  // ЧЕРВЯК - ОГРОМНЫЙ
-  snake.forEach((s,i)=>{
-    ctx.fillStyle=i==0?'#8fff8f':'#00ff00';
-    ctx.fillRect(s.x*size+3,s.y*size+3,size-6,size-6);
-    if(i==0){ctx.fillStyle='#000';ctx.fillRect(s.x*size+10,s.y*size+8,6,6);ctx.fillRect(s.x*size+18,s.y*size+8,6,6);}
-  });
+let h={x:sn[0].x+dx,y:sn[0].y+dy};if(h.x<0)h.x=19;if(h.x>19)h.x=0;if(h.y<0)h.y=19;if(h.y>19)h.y=0;
+if(sn.some(o=>o.x==h.x&&o.y==h.y)){end('Съел себя! '+sc);return}
+sn.unshift(h);if(h.x==fd.x&&h.y==fd.y){sc+=10;Ss.innerText=sc;NF();if(sc>=300){end('ПОБЕДА! 300 очков!');return}}else sn.pop();
+X.fillStyle='#1e1e8a';X.fillRect(0,0,600,600);
+X.strokeStyle='#2a2ab0';for(let i=0;i<=20;i++){X.beginPath();X.moveTo(i*30,0);X.lineTo(i*30,600);X.stroke();X.beginPath();X.moveTo(0,i*30);X.lineTo(600,i*30);X.stroke();}
+X.fillStyle='yellow';X.fillRect(fd.x*30+2,fd.y*30+2,26,26);X.fillStyle='red';X.fillRect(fd.x*30+9,fd.y*30+9,12,12);
+sn.forEach((o,i)=>{X.fillStyle=i==0?'#aaffaa':'#00ff00';X.fillRect(o.x*30+2,o.y*30+2,26,26);if(i==0){X.fillStyle='#000';X.fillRect(o.x*30+8,o.y*30+8,5,5);X.fillRect(o.x*30+18,o.y*30+8,5,5)}})
 }
-
-document.addEventListener('keydown',e=>{
-  if((e.key=='ArrowUp'||e.key=='w')&&dy==0) goDir(0,-1);
-  if((e.key=='ArrowDown'||e.key=='s')&&dy==0) goDir(0,1);
-  if((e.key=='ArrowLeft'||e.key=='a')&&dx==0) goDir(-1,0);
-  if((e.key=='ArrowRight'||e.key=='d')&&dx==0) goDir(1,0);
-});
-let sx,sy;
-c.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;});
-c.addEventListener('touchend',e=>{
-  let ex=e.changedTouches[0].clientX,ey=e.changedTouches[0].clientY;
-  let dx2=ex-sx,dy2=ey-sy;
-  if(Math.abs(dx2)>Math.abs(dy2)){if(dx2>0&&dx!=-1)goDir(1,0);else if(dx!=1)goDir(-1,0);}
-  else{if(dy2>0&&dy!=-1)goDir(0,1);else if(dy!=1)goDir(0,-1);}
-});
+document.addEventListener('keydown',e=>{if(e.key=='ArrowUp'&&dy==0)D(0,-1);if(e.key=='ArrowDown'&&dy==0)D(0,1);if(e.key=='ArrowLeft'&&dx==0)D(-1,0);if(e.key=='ArrowRight'&&dx==0)D(1,0)});
+let sx,sy;C.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY});
+C.addEventListener('touchend',e=>{let dx2=e.changedTouches[0].clientX-sx,dy2=e.changedTouches[0].clientY-sy;if(Math.abs(dx2)>Math.abs(dy2)){if(dx2>0&&dx!=-1)D(1,0);else if(dx!=1)D(-1,0)}else{if(dy2>0&&dy!=-1)D(0,1);else if(dy!=1)D(0,-1)}});
+// рисуем пустое поле под стартовым экраном
+X.fillStyle='#1e1e8a';X.fillRect(0,0,600,600);
 </script></body></html>
