@@ -1,0 +1,105 @@
+player_name: str = ""
+lives: int = 3
+game_running: bool = True
+inventory: list = []
+commands: tuple = ("осмотреться", "перейти", "инвентарь", "помощь", "выход")
+visited_rooms: set = set()
+
+rooms: dict = {
+    "комната управления": {"desc": "На столе лежит карта.", "item": "карта", "next": ["серверная"]},
+    "серверная": {"desc": "Тут нужны расчеты.", "item": "ключ", "next": ["лаборатория"], "need": "карта"},
+    "лаборатория": {"desc": "Тут загадка со словом.", "item": "код выхода", "next": ["главная дверь"], "need": "ключ"},
+    "главная дверь": {"desc": "Дверь с замком.", "item": None, "next": [], "need": "код выхода"}
+}
+
+current_room: str = "комната управления"
+
+def show_menu() -> None:
+    print("\nКоманды:", ", ".join(commands))
+
+def show_inventory(inv: list) -> None:
+    print("Инвентарь пуст." if len(inv) == 0 else f"У тебя: {inv}")
+
+def enter_room(room_name: str) -> None:
+    print(f"\n--- {room_name.upper()} ---")
+    print(rooms[room_name]["desc"])
+    visited_rooms.add(room_name)
+
+def solve_math_puzzle() -> bool:
+    print("\nЗагадка: 15 + 27 =?")
+    try:
+        ans = int(input("Ответ: "))
+        return ans == 42
+    except ValueError:
+        print("Надо вводить число!")
+        return False
+
+def solve_word_puzzle() -> bool:
+    print("\nЗагадка: напиши 'выход' наоборот")
+    ans = input("Ответ: ").strip().lower()
+    return ans == "дохыв"
+
+def show_result() -> None:
+    print(f"\n=== ИТОГ ===\nИгрок: {player_name}\nКомнат посещено: {len(visited_rooms)}\nЖизней осталось: {lives}\nПредметы: {inventory}")
+
+print("=== DIGITAL ESCAPE ===")
+player_name = input("Твое имя: ").strip()
+if player_name == "":
+    player_name = "Игрок"
+
+while game_running and lives > 0:
+    enter_room(current_room)
+    show_menu()
+    cmd = input("-> ").strip().lower()
+
+    if cmd == "осмотреться":
+        item = rooms[current_room]["item"]
+        if item and item not in inventory:
+            inventory.append(item)
+            print(f"Нашел: {item}")
+        else:
+            print("Тут пусто.")
+
+    elif cmd == "инвентарь":
+        show_inventory(inventory)
+
+    elif cmd == "помощь":
+        print("Собери карту -> ключ -> код и открой главную дверь. У тебя 3 жизни.")
+
+    elif cmd == "выход":
+        game_running = False
+
+    elif cmd == "перейти":
+        print(f"Можно пойти в: {rooms[current_room]['next']}")
+        nxt = input("Куда: ").strip().lower()
+        if nxt not in rooms[current_room]["next"]:
+            print("Туда нельзя.")
+            continue
+
+        need = rooms[nxt].get("need")
+        if need and need not in inventory:
+            print(f"Нужен предмет: {need}")
+            lives -= 1
+            print(f"Минус жизнь. Осталось {lives}")
+            continue
+
+        if nxt == "серверная" and not solve_math_puzzle():
+            lives -= 1
+            print(f"Неверно! Жизней: {lives}")
+            continue
+        if nxt == "лаборатория" and not solve_word_puzzle():
+            lives -= 1
+            print(f"Неверно! Жизней: {lives}")
+            continue
+        if nxt == "главная дверь":
+            print("ПОБЕДА! Ты сбежал!")
+            show_result()
+            break
+
+        current_room = nxt
+    else:
+        print("Такой команды нет.")
+
+if lives <= 0:
+    print("\nТы проиграл, жизни кончились.")
+    show_result()
