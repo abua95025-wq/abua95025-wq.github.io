@@ -1,10 +1,48 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DIGITAL ESCAPE</title>
-<style>body{background:#0d1117;color:#0f0;font-family:monospace;padding:20px}
-#g{border:2px solid #0f0;padding:15px;max-width:500px;margin:auto}</style></head>
-<body><div id="g"><h1>Игра работает!</h1>
-<p>Файл для учителя будет digital_escape.py</p></div></body></html>
-
-
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIGITAL ESCAPE</title>
+<style>
+body{background:#000;color:#0f0;font-family:monospace;padding:20px;max-width:600px;margin:auto}
+#game{border:2px solid #0f0;padding:15px;min-height:300px}
+button{background:#000;color:#0f0;border:1px solid #0f0;padding:8px;margin:5px;cursor:pointer}
+input{background:#111;color:#0f0;border:1px solid #0f0;padding:8px;width:90%}
+</style>
+</head>
+<body>
+<h1>💻 DIGITAL ESCAPE</h1>
+<div id="game"></div>
+<script>
+let lives=3, inv=[], room=0;
+let rooms=[
+ {name:"КОМНАТА УПРАВЛЕНИЯ", desc:"На столе КАРТА. Команды: осмотреться, инвентарь, перейти", item:"карта", quiz:null},
+ {name:"СЕРВЕРНАЯ", desc:"Загадка: 15+27=? Напиши ответ!", item:"ключ", quiz:"42", quizItem:"ключ"},
+ {name:"ЛАБОРАТОРИЯ", desc:"Напиши слово 'выход' наоборот!", item:"код выхода", quiz:"дохыв", quizItem:"код выхода"}
+];
+function render(){
+ let r=rooms[room];
+ if(room>=3){document.getElementById("game").innerHTML="<h2>🏆 ПОБЕДА! Ты вышел!</h2><p>Инвентарь: "+inv.join(", ")+"</p><button onclick='location.reload()'>Заново</button>"; return;}
+ document.getElementById("game").innerHTML=`<h3>${r.name}</h3><p>${r.desc}</p><p>❤️ Жизней: ${lives} | 🎒 ${inv.join(", ")||"пусто"}</p><input id="cmd" placeholder="пиши команду..." onkeydown="if(event.key==='Enter')doCmd()"><br><button onclick="doCmd()">Ввод</button><button onclick="cmdAction('осмотреться')">осмотреться</button><button onclick="cmdAction('инвентарь')">инвентарь</button><button onclick="cmdAction('перейти')">перейти</button><div id="log"></div>`;
+}
+function cmdAction(c){document.getElementById("cmd").value=c; doCmd();}
+function doCmd(){
+ let c=document.getElementById("cmd").value.toLowerCase().trim();
+ let r=rooms[room]; let log=document.getElementById("log");
+ if(c==="осмотреться"){
+   if(r.item &&!inv.includes(r.item)){inv.push(r.item); log.innerHTML+=`<p>Нашел: ${r.item}</p>`;}
+   else log.innerHTML+="<p>Ничего нового</p>";
+ } else if(c==="инвентарь"){log.innerHTML+=`<p>У тебя: ${inv.join(", ")||"пусто"}</p>`;}
+ else if(c==="перейти"){room++; if(room<3)log.innerHTML+=`<p>Перешел в ${rooms[room].name}</p>`; }
+ else if(c===r.quiz){if(!inv.includes(r.quizItem)){inv.push(r.quizItem); log.innerHTML+=`<p>Верно! Получил ${r.quizItem}</p>`;}}
+ else if(c!==""){lives--; log.innerHTML+=`<p>Неверно! -1 жизнь</p>`; if(lives<=0){document.getElementById("game").innerHTML="<h2>💀 GAME OVER</h2><button onclick='location.reload()'>Заново</button>"; return;}}
+ document.getElementById("cmd").value=""; render(); document.getElementById("game").appendChild(log);
+}
+render();
+</script>
+</body>
+</html>
 
 
 
