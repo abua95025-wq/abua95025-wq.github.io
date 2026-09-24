@@ -3,59 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEGA ESCAPE</title>
+<title>ESCAPE - Рабочая версия</title>
 <style>
-body{background:#000;color:#0f0;font-family:monospace;padding:10px;margin:0}
-#box{max-width:700px;margin:0 auto;border:2px solid #0f0;padding:15px;box-shadow:0 0 25px #0f0;background:#010}
-#hud{display:flex;justify-content:space-between;background:#001a00;padding:8px;border:1px solid #0f0}
-.story{background:#111;border-left:3px solid #0ff;padding:10px;color:#8ff;margin:10px 0}
-input{width:92%;background:#000;color:#0f0;border:2px solid #0f0;padding:12px;font-size:16px}
-button{background:#000;color:#0f0;border:1px solid #0f0;padding:10px 14px;margin:4px;cursor:pointer}
+body{background:#111;color:#0f0;font-family:monospace;padding:15px;max-width:600px;margin:auto}
+h1{border:2px solid #0f0;padding:10px;text-align:center}
+.box{border:1px solid #0f0;padding:10px;margin:10px 0;background:#000}
+input{width:100%;padding:10px;background:#000;color:#0f0;border:1px solid #0f0;font-size:16px}
+button{background:#000;color:#0f0;border:1px solid #0f0;padding:8px 12px;margin:3px;cursor:pointer}
 button:hover{background:#0f0;color:#000}
 </style>
 </head>
 <body>
-<div id="box">
-<h1>💻 DIGITAL ESCAPE // MEGA</h1>
-<div id="hud"><span id="lives">❤️3</span><span id="room">1/6</span><span>🗺️</span></div>
-<div id="map" style="background:#000;border:1px solid #333;padding:8px;font-size:12px;white-space:pre"></div>
-<div id="game"></div>
-</div>
-<script>
-let lives=3,inv=[],room=0;
-let beep=f=>{try{let a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.value=0.2;o.start();setTimeout(()=>o.stop(),250)}catch(e){}};
-let R=[
-{n:"КОМНАТА 1: УПРАВЛЕНИЕ",d:"На столе КАРТА - пиши осмотреться",s:"📜 ДНЕВНИК 1: Я Abu, создал ИИ ABU-3000. В 03:14 он запер комплекс. Мы в ловушке.",it:"карта 🗺️",q:"",m:"[■][ ][ ]\n[ ][ ][ ]\n[ ][ ][X]"},
-{n:"КОМНАТА 2: СЕРВЕРНАЯ",d:"Загадка на стене 15+27=? Введи 42",s:"📜 ДНЕВНИК 2: Сервера плавятся! Код - сумма чисел!",it:"",q:"42",qi:"ключ 🗝️",m:"[ ][■][ ]\n[ ][ ][ ]\n[ ][ ][X]"},
-{n:"КОМНАТА 3: ЛАБОРАТОРИЯ",d:"На зеркале ТЫХОД - введи наоборот дохыв",s:"📜 ДНЕВНИК 3: Профессор писал задом наперед чтобы ИИ не понял.",it:"",q:"дохыв",qi:"чип 💾",m:"[ ][ ][■]\n[ ][ ][ ]\n[ ][ ][X]"},
-{n:"КОМНАТА 4: СКЛАД",d:"Тут ящик. Нужен чип. Внутри ФОНАРИК - осмотреться",s:"📜 ЗАПИСКА: Забрал фонарик иду в туннель. - Коля",it:"фонарик 🔦",q:"",need:["чип 💾"],m:"[ ][ ][ ]\n[■][ ][ ]\n[ ][ ][X]"},
-{n:"КОМНАТА 5: ТУННЕЛЬ",d:"ТЕМНО! Пиши свет",s:"📜 КРОВЬЮ: НЕ ВКЛЮЧАЙ СВЕТ ОН ВИДИТ!",it:"",q:"свет",qi:"лом 🔧",need:["фонарик 🔦"],m:"[ ][ ][ ]\n[ ][■][ ]\n[ ][ ][X]"},
-{n:"КОМНАТА 6: БОСС",d:"ИИ говорит: Пароль мое имя - abu",s:"💀 ИИ: Ты мой! Останься навсегда!",it:"",q:"abu",qi:"WIN",need:["лом 🔧","ключ 🗝️"],m:"[ ][ ][ ]\n[ ][ ][■]\n[ ][ ][X]"}
-];
-function render(){
-if(room>=6){beep(1000);document.getElementById("game").innerHTML=`<h2 style="color:#0ff;text-align:center">🏆 ПОБЕДА!<br>Ты сбежал от ИИ!<br>Собрал: ${inv.join(", ")}<br>Жизней: ${lives}</h2><button onclick="location.reload()">Заново</button>`;return;}
-let r=R[room];document.getElementById("lives").innerText="❤️"+lives;document.getElementById("room").innerText=(room+1)+"/6";document.getElementById("map").innerText="КАРТА КОМПЛЕКСА:\n"+r.m+"\n■ = ты";
-let ok=!r.need||r.need.every(x=>inv.includes(x));
-document.getElementById("game").innerHTML=`
-<h3 style="background:#0f0;color:#000;padding:5px">${r.n}</h3>
-<div class="story">${r.s}</div>
-<p>${r.d}</p>
-${r.need?`<p style="color:${ok?'#0f0':'red'}">Нужно: ${r.need.join(", ")} ${ok?"✓":"❌"}</p>`:''}
-<p>🎒 ${inv.join(", ")||"пусто"}</p>
-<input id="cmd" placeholder="> пиши команду" onkeydown="if(event.key==='Enter')go()" autofocus>
-<br><button onclick="go()">ВВОД</button>
+<h1>💻 ESCAPE</h1>
+<div class="box">❤️ Жизни: <span id="lives">3</span> | Комната: <span id="room">1/4</span></div>
+<div class="box" id="story"></div>
+<div class="box" id="desc"></div>
+<div class="box">🎒 <span id="inv">пусто</span></div>
+<input id="cmd" placeholder="> пиши команду..." onkeydown="if(event.key==='Enter')go()">
+<br>
 <button onclick="act('осмотреться')">осмотреться</button>
 <button onclick="act('перейти')">перейти</button>
-<div id="log" style="margin-top:10px;background:#020202;padding:8px;border:1px solid #222;max-height:200px;overflow:auto"></div>`;
+<button onclick="act('помощь')">помощь</button>
+<div class="box" id="log" style="min-height:80px"></div>
+<p style="font-size:11px;color:#555">Пасхалки: попробуй ввести abu, god, help, 42, кто я</p>
+
+<script>
+let lives=3, inv=[], room=0;
+let beep=f=>{try{let a=new AudioContext(),o=a.createOscillator();o.frequency.value=f;o.connect(a.destination);o.start();setTimeout(()=>o.stop(),150)}catch(e){}};
+
+let R=[
+{n:"1. УПРАВЛЕНИЕ", d:"На столе КАРТА. Напиши 'осмотреться' чтобы взять.", s:"Дневник: ИИ запер нас. Ищи выход!"},
+{n:"2. СЕРВЕРНАЯ", d:"Пароль на двери: 15+27=? Ответ: 42", s:"Сервера гудят. Код 42 открывает дверь."},
+{n:"3. СКЛАД", d:"Тут лежит ФОНАРИК. Команда 'осмотреться'.", s:"Записка: В туннеле темно, нужен фонарик."},
+{n:"4. ВЫХОД", d:"Темно! Напиши 'свет' чтобы включить фонарик и сбежать.", s:"Выход близко! Нужен фонарик."}
+];
+
+function render(){
+if(room>=4){document.body.innerHTML="<h1>🏆 ПОБЕДА! Ты сбежал!<br><br>Нашел: "+inv.join(", ")+"<br><button onclick='location.reload()'>Заново</button></h1>";beep(1000);return;}
+let r=R[room];
+document.getElementById("lives").innerText=lives;
+document.getElementById("room").innerText=(room+1)+"/4";
+document.getElementById("story").innerText=r.s;
+document.getElementById("desc").innerText=r.d;
+document.getElementById("inv").innerText=inv.join(", ")||"пусто";
 }
-function act(c){document.getElementById("cmd").value=c;go();}
+
+function act(t){document.getElementById("cmd").value=t;go();}
+
 function go(){
-let c=document.getElementById("cmd").value.toLowerCase().trim();let r=R[room];let needOk=!r.need||r.need.every(x=>inv.includes(x));let old=document.getElementById("log")?document.getElementById("log").innerHTML:"";let m="";
-if(c=="осмотреться"){if(r.it&&!inv.includes(r.it)){inv.push(r.it);beep(800);m=`<p style="color:yellow">+ ${r.it} 🔊</p>`}else m="<p>Пусто</p>"}
-else if(c=="перейти"){if(r.q){m="<p style='color:red'>Сначала загадку!</p>";beep(100)}else if(!needOk){m="<p style='color:red'>Нужны предметы!</p>";beep(100)}else{room++;beep(600);m="<p style='color:#0ff'>Перешел...</p>"}}
-else if(r.q&&c==r.q){if(!needOk){m="<p style='color:red'>Нет предметов!</p>"}else{if(r.qi&&!inv.includes(r.qi)){inv.push(r.qi);beep(1000);m=`<p style="color:#0f0">Верно! +${r.qi} 🔊</p>`}room++;if(r.qi=="WIN")room=6;}}
-else if(c!=""){lives--;beep(120);m=`<p style="color:red">-1 жизнь! (${c})</p>`;if(lives<=0){document.getElementById("game").innerHTML="<h2>💀 GAME OVER</h2><button onclick='location.reload()'>Заново</button>";return;}}
-document.getElementById("cmd").value="";render();document.getElementById("log").innerHTML=old+m;
+let c=document.getElementById("cmd").value.toLowerCase().trim();
+let log=document.getElementById("log");
+let msg="";
+
+if(c=="осмотреться"){
+ if(room==0 &&!inv.includes("карта")){inv.push("карта"); beep(800); msg="<p style='color:yellow'>+ карта 🗺️ 🔊</p>";}
+ else if(room==2 &&!inv.includes("фонарик")){inv.push("фонарик"); beep(800); msg="<p style='color:yellow'>+ фонарик 🔦 🔊</p>";}
+ else msg="<p>Тут пусто</p>";
+}
+else if(c=="перейти"){
+ if(room==1){msg="<p style='color:red'>Нужен код! Введи 42</p>"; beep(200);}
+ else if(room==3 &&!inv.includes("фонарик")){msg="<p style='color:red'>Без фонарика не пойду! Темно!</p>"; beep(200);}
+ else{room++; beep(500); msg="<p style='color:#0ff'>Перешел в комнату "+(room+1)+"</p>";}
+}
+else if(c=="42" && room==1){room++; beep(1000); msg="<p style='color:#0f0'>Верно! Дверь открылась 🔊</p>";}
+else if(c=="свет" && room==3){room=4; beep(1000); msg="<p style='color:#0f0'>Свет включен! Вижу выход!</p>";}
+// ПАСХАЛКИ
+else if(c=="abu"){msg="<p style='color:#0ff'>👋 Привет, создатель! Ты мой автор! +1 жизнь</p>"; lives++; beep(1200);}
+else if(c=="god" || c=="бог"){msg="<p style='color:gold'>😇 Чит-код! + ключ от всех дверей</p>"; inv.push("божественный ключ"); beep(1500);}
+else if(c=="помощь" || c=="help"){msg="<p>Команды: осмотреться, перейти, 42, свет<br>Пасхалки: abu, god, кто я, 42</p>";}
+else if(c=="кто я"){msg="<p>Ты Abu - хакер который взламывает ИИ! 💻</p>"; beep(600);}
+else if(c!=""){lives--; beep(100); msg="<p style='color:red'>Неверно! -1 жизнь: "+c+"</p>"; if(lives<=0){document.body.innerHTML="<h1>💀 GAME OVER<br><button onclick='location.reload()'>Заново</button></h1>";return;}}
+
+document.getElementById("cmd").value="";
+render();
+log.innerHTML=msg+log.innerHTML;
 }
 render();
 </script>
