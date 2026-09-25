@@ -1,20 +1,49 @@
-<!DOCTYPE html><html><body style="margin:0;background:#a0e0ff;text-align:center">
-<h1>⭐ STAR JUMP - ЖМИ ПРОБЕЛ ⭐</h1>
-<canvas id="c" width="600" height="400" style="background:#fff;border:4px solid #000"></canvas>
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mini Jump - Mac</title>
+<style>
+body{margin:0;background:#e0f6ff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:20px;height:100vh;font-family:-apple-system,sans-serif}
+h1{font-size:18px;margin:10px}
+canvas{background:#fff;border:4px solid #1a3a8a;border-radius:16px;box-shadow:0 8px 0 #1a3a8a}
+p{font-size:12px;opacity:0.7}
+</style></head><body>
+<h1>⭐ MINI JUMP - ПРОБЕЛ = ПРЫЖОК ⭐</h1>
+<canvas id="c" width="400" height="300"></canvas>
+<p>Тап / Пробел / W - прыжок | Расстояние маленькое</p>
 <script>
-let c=document.getElementById('c'),x=c.getContext('2d'),py=300,vy=0,score=0,sx=600;
+let c=document.getElementById('c'),x=c.getContext('2d'),py=200,vy=0,score=0,sx=400,coins=[];
+function resetCoin(){coins=[{x:250,y:150},{x:350,y:100},{x:500,y:180}]}
+resetCoin();
 setInterval(()=>{
- vy+=0.8; py+=vy; if(py>330){py=330; vy=0}
- if(py<0)py=0;
- sx-=5; if(sx<-30){sx=600; score++}
- if(Math.abs(sx-100)<30 && py>250){alert('БАМ! Score:'+score); sx=600; score=0}
- x.clearRect(0,0,600,400);
- x.fillStyle='#ffdd00'; x.fillRect(sx,320,30,30);
- x.fillStyle='#7ed957'; x.fillRect(100,py,30,30);
- x.fillStyle='#000'; x.font='20px Arial'; x.fillText('Score:'+score,10,20);
-},20);
-window.onkeydown=e=>{if(e.code=='Space')vy=-12}
-c.onclick=()=>vy=-12
-</script>
-<p>ЖМИ ПРОБЕЛ ЧТОБЫ ПРЫГАТЬ, ОБХОДИ ЖЕЛТЫЕ КУБИКИ</p>
-</body></html>
+ vy+=0.6; py+=vy; 
+ if(py>230){py=230; vy=0}
+ sx-=4; if(sx<-30){sx=420; score++; coins.forEach(o=>o.x+=200)}
+ if(sx<420) sx-=0; 
+ coins.forEach(o=>{
+   o.x-=4;
+   if(o.x<-20){o.x=420+Math.random()*200; o.y=80+Math.random()*120}
+ });
+
+ if(Math.abs(sx-80)<28 && py>200){alert('Упс! Score:'+score); score=0; sx=420; resetCoin();}
+ coins=coins.filter(o=>{
+   if(Math.abs(o.x-80)<20 && Math.abs(o.y-py)<20){score+=2; return false}
+   return true;
+ });
+ if(coins.length<3){coins.push({x:420,y:80+Math.random()*120})}
+
+
+ x.clearRect(0,0,400,300);
+ x.fillStyle='#b8f0ff'; x.fillRect(0,260,400,40); 
+ x.fillStyle='#ff3a3a'; x.fillRect(sx,230,28,30); 
+ x.fillStyle='#7ed957'; x.fillRect(80,py,26,26); 
+ x.font='16px Arial'; x.fillText('😊',82,py+19);
+ x.fillStyle='#ffdd00';
+ coins.forEach(o=>{x.beginPath(); x.arc(o.x,o.y,10,0,6.28); x.fill(); x.fillText('⭐',o.x-8,o.y+4);});
+ x.fillStyle='#000'; x.font='700 14px Arial'; x.fillText('SCORE:'+score,10,20);
+},18);
+window.onkeydown=e=>{
+ if(e.code==='Space'||e.key==='w'||e.key==='ArrowUp'){vy=-9; e.preventDefault()}
+};
+c.onclick=()=>vy=-9;
+c.ontouchstart=e=>{e.preventDefault(); vy=-9;}
+</script></body></html>
