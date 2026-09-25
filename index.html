@@ -2,83 +2,80 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESCAPE - Рабочая версия</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>SUBWAY SURF 3D</title>
 <style>
-body{background:#111;color:#0f0;font-family:monospace;padding:15px;max-width:600px;margin:auto}
-h1{border:2px solid #0f0;padding:10px;text-align:center}
-.box{border:1px solid #0f0;padding:10px;margin:10px 0;background:#000}
-input{width:100%;padding:10px;background:#000;color:#0f0;border:1px solid #0f0;font-size:16px}
-button{background:#000;color:#0f0;border:1px solid #0f0;padding:8px 12px;margin:3px;cursor:pointer}
-button:hover{background:#0f0;color:#000}
+*{margin:0;overflow:hidden}body{background:#000}
+canvas{display:block;width:100vw;height:100vh}
+#hud{position:absolute;top:10px;left:0;width:100%;display:flex;justify-content:space-around;color:#fff;font-family:monospace;font-size:20px;text-shadow:0 0 10px #0ff;pointer-events:none}
+#menu{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(#222,#000);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:monospace;z-index:5}
+.btn{padding:15px 50px;background:#0ff;color:#000;border:none;font-size:22px;border-radius:12px;margin-top:20px;cursor:pointer;box-shadow:0 0 20px #0ff}
+#ctrl{position:absolute;bottom:20px;width:100%;display:flex;justify-content:space-around;z-index:4}
+.cbtn{width:90px;height:90px;background:rgba(0,255,255,0.15);border:2px solid #0ff;border-radius:20px;color:#0ff;font-size:30px}
 </style>
 </head>
 <body>
-<h1>💻 ESCAPE</h1>
-<div class="box">❤️ Жизни: <span id="lives">3</span> | Комната: <span id="room">1/4</span></div>
-<div class="box" id="story"></div>
-<div class="box" id="desc"></div>
-<div class="box">🎒 <span id="inv">пусто</span></div>
-<input id="cmd" placeholder="> пиши команду..." onkeydown="if(event.key==='Enter')go()">
-<br>
-<button onclick="act('осмотреться')">осмотреться</button>
-<button onclick="act('перейти')">перейти</button>
-<button onclick="act('помощь')">помощь</button>
-<div class="box" id="log" style="min-height:80px"></div>
-<p style="font-size:11px;color:#555">Пасхалки: попробуй ввести abu, god, help, 42, кто я</p>
-
+<div id="hud"><span>💰 <b id="c">0</b></span><span>🏃 <b id="d">0</b>m</span><span>❤️ <b id="l">3</b></span></div>
+<canvas id="cv"></canvas>
+<div id="ctrl"><button class="cbtn" onclick="move(-1)">◀</button><button class="cbtn" onclick="jump()">▲</button><button class="cbtn" onclick="move(1)">▶</button></div>
+<div id="menu"><h1 style="font-size:40px;color:#0ff;text-shadow:0 0 30px #0ff">SUBWAY SURF 3D</h1><p style="margin:10px">🚇 Abu Edition • 3D Perspective</p><p style="font-size:11px;color:#888">Свайп / A D / стрелки • Прыжок W / SPACE</p><button class="btn" onclick="start()">ИГРАТЬ</button></div>
 <script>
-let lives=3, inv=[], room=0;
-let beep=f=>{try{let a=new AudioContext(),o=a.createOscillator();o.frequency.value=f;o.connect(a.destination);o.start();setTimeout(()=>o.stop(),150)}catch(e){}};
-
-let R=[
-{n:"1. УПРАВЛЕНИЕ", d:"На столе КАРТА. Напиши 'осмотреться' чтобы взять.", s:"Дневник: ИИ запер нас. Ищи выход!"},
-{n:"2. СЕРВЕРНАЯ", d:"Пароль на двери: 15+27=? Ответ: 42", s:"Сервера гудят. Код 42 открывает дверь."},
-{n:"3. СКЛАД", d:"Тут лежит ФОНАРИК. Команда 'осмотреться'.", s:"Записка: В туннеле темно, нужен фонарик."},
-{n:"4. ВЫХОД", d:"Темно! Напиши 'свет' чтобы включить фонарик и сбежать.", s:"Выход близко! Нужен фонарик."}
-];
-
-function render(){
-if(room>=4){document.body.innerHTML="<h1>🏆 ПОБЕДА! Ты сбежал!<br><br>Нашел: "+inv.join(", ")+"<br><button onclick='location.reload()'>Заново</button></h1>";beep(1000);return;}
-let r=R[room];
-document.getElementById("lives").innerText=lives;
-document.getElementById("room").innerText=(room+1)+"/4";
-document.getElementById("story").innerText=r.s;
-document.getElementById("desc").innerText=r.d;
-document.getElementById("inv").innerText=inv.join(", ")||"пусто";
+let cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+cv.width=innerWidth; cv.height=innerHeight;
+let W=cv.width,H=cv.height, CX=W/2, lane=1, coins=0, dist=0, lives=3, playing=false, y=H-150, vy=0, jumping=false, speed=8, objs=[];
+let beep=f=>{try{let a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.value=0.2;o.connect(g);g.connect(a.destination);o.start();setTimeout(()=>o.stop(),120)}catch(e){}};
+function laneX(l, depth){let vanish=CX; let spread=W*0.4*(depth); let center=vanish; return center + (l-1)*spread;}
+function start(){document.getElementById("menu").style.display="none"; playing=true; objs=[]; coins=0;lives=3;dist=0;lane=1;speed=8; loop(); spawner();}
+function spawner(){if(!playing)return; let r=Math.random(); if(r<0.04){objs.push({type:"train",lane:Math.floor(Math.random()*3),z:0,w:80,h:120,color:"#e33"});}else if(r<0.12){objs.push({type:"coin",lane:Math.floor(Math.random()*3),z:0});} setTimeout(spawner,180);}
+function move(d){lane=Math.max(0,Math.min(2,lane+d)); beep(500);}
+function jump(){if(!jumping){vy=-22; jumping=true; beep(700);}}
+function loop(){
+if(!playing)return; ctx.clearRect(0,0,W,H);
+// sky
+let grad=ctx.createLinearGradient(0,0,0,H); grad.addColorStop(0,"#112"); grad.addColorStop(1,"#000"); ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+// perspective rails
+ctx.strokeStyle="#444"; ctx.lineWidth=2;
+for(let i=0;i<=3;i++){ // rail lines
+ctx.beginPath(); for(let z=0;z<=1;z+=0.02){let d=z; let x=CX + (i-1.5)*W*0.6*d - (i==1||i==2?W*0.15*d:0); let yy=H*d*0.8; if(z==0)ctx.moveTo(x,yy); else ctx.lineTo(x,yy);} ctx.stroke();
 }
-
-function act(t){document.getElementById("cmd").value=t;go();}
-
-function go(){
-let c=document.getElementById("cmd").value.toLowerCase().trim();
-let log=document.getElementById("log");
-let msg="";
-
-if(c=="осмотреться"){
- if(room==0 &&!inv.includes("карта")){inv.push("карта"); beep(800); msg="<p style='color:yellow'>+ карта 🗺️ 🔊</p>";}
- else if(room==2 &&!inv.includes("фонарик")){inv.push("фонарик"); beep(800); msg="<p style='color:yellow'>+ фонарик 🔦 🔊</p>";}
- else msg="<p>Тут пусто</p>";
+// objs sorted far->near
+objs.sort((a,b)=>a.z-b.z);
+for(let k=objs.length-1;k>=0;k--){
+let o=objs[k]; o.z+=0.008*speed/8; if(o.z>1){objs.splice(k,1); continue;}
+let scale=o.z; let px=laneX(o.lane, o.z); let py=H*o.z*0.85; let s=20+scale*80;
+if(o.type=="coin"){
+ctx.fillStyle="gold"; ctx.shadowColor="gold"; ctx.shadowBlur=15;
+ctx.beginPath(); ctx.arc(px,py,s*0.25,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+ctx.fillStyle="#ff0"; ctx.font=s*0.3+"px monospace"; ctx.fillText("$",px-4,py+4);
+if(o.z>0.82 && o.lane==lane &&!jumping){coins++; beep(1200); objs.splice(k,1);}
+}else{
+let w=s*0.9, h=s*1.2;
+ctx.fillStyle=o.color; ctx.fillRect(px-w/2,py-h,w,h);
+ctx.fillStyle="#300"; ctx.fillRect(px-w/2,py-h,w,h*0.2);
+ctx.fillStyle="#fff"; ctx.fillRect(px-w/2+5,py-h+15, w-10,10);
+if(o.z>0.78 && o.z<0.92 && o.lane==lane &&!jumping){
+lives--; beep(80); objs.splice(k,1); navigator.vibrate&&navigator.vibrate(100);
+if(lives<=0){gameOver(); return;}
 }
-else if(c=="перейти"){
- if(room==1){msg="<p style='color:red'>Нужен код! Введи 42</p>"; beep(200);}
- else if(room==3 &&!inv.includes("фонарик")){msg="<p style='color:red'>Без фонарика не пойду! Темно!</p>"; beep(200);}
- else{room++; beep(500); msg="<p style='color:#0ff'>Перешел в комнату "+(room+1)+"</p>";}
 }
-else if(c=="42" && room==1){room++; beep(1000); msg="<p style='color:#0f0'>Верно! Дверь открылась 🔊</p>";}
-else if(c=="свет" && room==3){room=4; beep(1000); msg="<p style='color:#0f0'>Свет включен! Вижу выход!</p>";}
-// ПАСХАЛКИ
-else if(c=="abu"){msg="<p style='color:#0ff'>👋 Привет, создатель! Ты мой автор! +1 жизнь</p>"; lives++; beep(1200);}
-else if(c=="god" || c=="бог"){msg="<p style='color:gold'>😇 Чит-код! + ключ от всех дверей</p>"; inv.push("божественный ключ"); beep(1500);}
-else if(c=="помощь" || c=="help"){msg="<p>Команды: осмотреться, перейти, 42, свет<br>Пасхалки: abu, god, кто я, 42</p>";}
-else if(c=="кто я"){msg="<p>Ты Abu - хакер который взламывает ИИ! 💻</p>"; beep(600);}
-else if(c!=""){lives--; beep(100); msg="<p style='color:red'>Неверно! -1 жизнь: "+c+"</p>"; if(lives<=0){document.body.innerHTML="<h1>💀 GAME OVER<br><button onclick='location.reload()'>Заново</button></h1>";return;}}
-
-document.getElementById("cmd").value="";
-render();
-log.innerHTML=msg+log.innerHTML;
 }
-render();
+// player shadow and player
+ctx.fillStyle="rgba(0,255,255,0.3)"; ctx.beginPath(); ctx.ellipse(laneX(lane,0.9),H*0.9,30,10,0,0,Math.PI*2); ctx.fill();
+y+=vy; vy+=1.2; if(y>=H-150){y=H-150; vy=0; jumping=false;}
+let pX=laneX(lane,0.92), pY=y;
+ctx.fillStyle="#0ff"; ctx.shadowColor="#0ff"; ctx.shadowBlur=20;
+ctx.fillRect(pX-18,pY-45,36,45); ctx.fillStyle="#fff"; ctx.fillRect(pX-12,pY-55,24,18);
+ctx.shadowBlur=0;
+dist+=0.2; speed+=0.01;
+document.getElementById("c").innerText=coins;
+document.getElementById("d").innerText=Math.floor(dist);
+document.getElementById("l").innerText=lives;
+requestAnimationFrame(loop);
+}
+function gameOver(){playing=false; document.getElementById("menu").innerHTML=`<h1 style="color:#f33">💥 CRASH!</h1><p>Монет: ${coins}<br>Дистанция: ${Math.floor(dist)}m</p><button class="btn" onclick="location.reload()">Заново</button>`; document.getElementById("menu").style.display="flex"; beep(50);}
+addEventListener("keydown",e=>{if(e.key=="ArrowLeft"||e.key=="a")move(-1); if(e.key=="ArrowRight"||e.key=="d")move(1); if(e.key=="ArrowUp"||e.key=="w"||e.key==" ")jump();});
+let sx=0; cv.addEventListener("touchstart",e=>sx=e.touches[0].clientX); cv.addEventListener("touchend",e=>{let dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>25)move(dx>0?1:-1); else jump();});
+addEventListener("resize",()=>{cv.width=innerWidth;cv.height=innerHeight; W=cv.width;H=cv.height;CX=W/2;});
 </script>
 </body>
 </html>
