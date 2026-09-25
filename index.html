@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>M5 F90 - NIGHT CITY</title>
+<style>html,body{margin:0;height:100%;background:#05080f;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#hud{position:fixed;inset:0;pointer-events:none}#top{position:absolute;top:0;left:0;right:0;padding:14px 18px;display:flex;justify-content:space-between;color:#fff;text-shadow:0 2px 12px #000}#speed{font-size:42px;line-height:1}#nitro{width:160px;height:10px;background:rgba(255,255,255,.15);border-radius:20px;overflow:hidden;margin-top:6px}#nfill{height:100%;width:100%;background:linear-gradient(90deg,#00f2ff,#7000ff);transition:width.1s}#controls{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px;pointer-events:auto;gap:12px}.col{display:flex;gap:12px;flex:1}.btn{flex:1;height:86px;border-radius:20px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.7);color:#fff;display:flex;align-items:center;justify-content:center;font:900 12px Arial;backdrop-filter:blur(10px)}#gas{background:linear-gradient(180deg,rgba(0,255,170,.4),rgba(0,255,170,.15));border-color:#00ffaa}#nitroBtn{background:linear-gradient(180deg,rgba(112,0,255,.5),rgba(0,242,255,.3))}</style>
+</head>
+<body>
+<div id="hud"><div id="top"><div><div id="speed">0</div><div style="font-size:11px;letter-spacing:2px;opacity:.7">KM/H • M5 F90 COMPETITION</div><div id="nitro"><div id="nfill"></div></div></div><div style="text-align:right;font-size:10px;line-height:1.4;opacity:.6">NIGHT CITY<br>DRIFT MODE: ON<br>[WASD] или кнопки</div></div><div id="controls"><div class="col"><div class="btn" id="L">◀</div><div class="btn" id="R">▶</div></div><div class="col"><div class="btn" id="B">BRAKE</div><div class="btn" id="nitroBtn">NITRO</div><div class="btn" id="G">GAS</div></div></div></div>
+<canvas id="c"></canvas>
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d'); let W,H,dpr=window.devicePixelRatio||1; function res(){W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}res();addEventListener('resize',res);
+let car={x:0,y:0,a:-1.57,v:0,vx:0,vy:0,drift:0}, inp={l:0,r:0,g:0,b:0,n:0}, nitro=100, smoke=[];
+let city=[]; for(let i=-25;i<=25;i++) for(let j=-25;j<=25;j++){if(i==0&&j==0)continue;if(Math.random()<0.62){city.push({x:i*170+Math.random()*30,y:j*170+Math.random()*30,w:55+Math.random()*45,h:55+Math.random()*45, hue:200+Math.random()*60})}}
+function update(){
+ let acc=0; if(inp.g) acc=inp.n&&nitro>0?0.52:0.31; if(inp.b) acc=-0.65;
+ if(inp.n&&nitro>0&&inp.g){nitro-=0.8; acc*=1.7} else if(!inp.n&&nitro<100) nitro+=0.15;
+ car.v+=acc; if(!inp.g&&!inp.b) car.v*=0.986; car.v=Math.max(-4,Math.min(15.5,car.v));
+ let turn=0; if(inp.l) turn=-1; if(inp.r) turn=1;
+ let grip = 0.92; if(Math.abs(car.v)>6) grip=0.86; if(inp.b&&Math.abs(car.v)>5) grip=0.6;
+ if(Math.abs(car.v)>0.6){ let spFactor = Math.min(1,Math.abs(car.v)/8); car.a+=turn*0.042* (0.4+spFactor*0.8); }
+ // anti-side slip but allow drift
+ let cs=Math.cos(car.a), sn=Math.sin(car.a);
+ let fwd=car.vx*cs+car.vy*sn; let side=car.vx*-sn+car.vy*cs;
+ car.drift = side; side*=grip; fwd=car.v;
+ car.vx=cs*fwd + -sn*side; car.vy=sn*fwd + cs*side;
+ car.x+=car.vx; car.y+=car.vy;
+ // smoke for drift
+ if(Math.abs(car.drift)>2.5 && Math.abs(car.v)>4){ smoke.push({x:car.x-sn*8-cs*10,y:car.y+cs*8-sn*10,a:0.6,s:Math.random()*4+2}); smoke.push({x:car.x+sn*8-cs*10,y:car.y-cs*8-sn*10,a:0.6,s:Math.random()*4+2}); }
+ smoke.forEach(s=>{s.a-=0.015; s.s+=0.18}); smoke=smoke.filter(s=>s.a>0); if(smoke.length>120) smoke.splice(0,smoke.length-120);
+ // collision
+ for(let b of city){ if(Math.abs(car.x-b.x)<b.w/2+13 && Math.abs(car.y-b.y)<b.h/2+13){car.x-=car.vx*1.4; car.y-=car.vy*1.4; car.v*=0.3; car.vx*=0.3; car.vy*=0.3; } }
+ document.getElementById('speed').innerText=Math.abs(car.v*22.5|0); document.getElementById('nfill').style.width=nitro+'%';
+}
+function draw(){
+ ctx.fillStyle='#080d19'; ctx.fillRect(0,0,W,H);
+ ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-car.a+1.57); ctx.translate(-car.x,-car.y);
+ // road
+ ctx.fillStyle='#0f1a2a'; ctx.fillRect(-6000,-6000,12000,12000);
+ ctx.strokeStyle='#162235'; ctx.lineWidth=96; ctx.lineCap='round'; for(let i=-6000;i<=6000;i+=170){ctx.beginPath();ctx.moveTo(i,-6000);ctx.lineTo(i,6000);ctx.stroke();ctx.beginPath();ctx.moveTo(-6000,i);ctx.lineTo(6000,i);ctx.stroke();}
+ ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.setLineDash([18,22]); for(let i=-6000;i<=6000;i+=170){ctx.beginPath();ctx.moveTo(i,-6000);ctx.lineTo(i,6000);ctx.stroke();ctx.beginPath();ctx.moveTo(-6000,i);ctx.lineTo(6000,i);ctx.stroke()}ctx.setLineDash([]);
+ // buildings neon
+ city.forEach(b=>{ctx.fillStyle='#0a121e';ctx.fillRect(b.x-b.w/2-6,b.y-b.h/2-6,b.w+12,b.h+12); ctx.fillStyle=`hsl(${b.hue} 30% 18%)`;ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h); ctx.fillStyle=`hsl(${b.hue} 80% 60%)`;ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h/2); ctx.globalAlpha=0.35; ctx.fillStyle=`hsl(${b.hue} 100% 65%)`; for(let k=0;k<2;k++) for(let l=0;l<3;l++) ctx.fillRect(b.x-b.w/2+8+k*16,b.y-b.h/2+10+l*12,6,6); ctx.globalAlpha=1});
+ // smoke
+ smoke.forEach(s=>{ctx.globalAlpha=s.a*0.3; ctx.fillStyle='#aab'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,7); ctx.fill();}); ctx.globalAlpha=1;
+ // car
+ ctx.save(); ctx.translate(car.x,car.y); ctx.rotate(car.a);
+ if(inp.n&&nitro>0){ctx.fillStyle='#00f2ff';ctx.beginPath();ctx.moveTo(-4,26);ctx.lineTo(-2,34+Math.random()*8);ctx.lineTo(2,34+Math.random()*8);ctx.lineTo(4,26);ctx.fill();}
+ ctx.fillStyle='rgba(0,0,0,.5)';ctx.beginPath();ctx.ellipse(0,7,15,28,0,0,7);ctx.fill();
+ ctx.fillStyle='#0a3d8a';ctx.fillRect(-12,-26,24,52); ctx.fillStyle='#051a3d';ctx.fillRect(-12,-26,24,8);ctx.fillRect(-12,21,24,7);
+ ctx.fillStyle='#cde8ff';ctx.fillRect(-10,-6,20,12);
+ ctx.fillStyle='#111';ctx.fillRect(-14,-19,4,8);ctx.fillRect(10,-19,4,8);ctx.fillRect(-14,13,4,8);ctx.fillRect(10,13,4,8);
+ ctx.fillStyle='#ffe600';ctx.fillRect(-9,-27,4,2);ctx.fillRect(5,-27,4,2);
+ ctx.restore(); ctx.restore();
+ // vignette
+ let g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.6)'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+(function loop(){update();draw();requestAnimationFrame(loop)})();
+function bind(id,k){let el=document.getElementById(id);let on=e=>{e.preventDefault();inp[k]=1},off=e=>{inp[k]=0};el.addEventListener('touchstart',on,{passive:false});el.addEventListener('touchend',off);el.addEventListener('touchcancel',off);el.addEventListener('mousedown',on);el.addEventListener('mouseup',off);el.addEventListener('mouseleave',off)}bind('G','g');bind('B','b');bind('L','l');bind('R','r');bind('nitroBtn','n');
+addEventListener('keydown',e=>{if(e.code=='KeyW'||e.code=='ArrowUp')inp.g=1;if(e.code=='KeyS'||e.code=='ArrowDown')inp.b=1;if(e.code=='KeyA'||e.code=='ArrowLeft')inp.l=1;if(e.code=='KeyD'||e.code=='ArrowRight')inp.r=1;if(e.code=='ShiftLeft'||e.code=='Space')inp.n=1});addEventListener('keyup',e=>{if(e.code=='KeyW'||e.code=='ArrowUp')inp.g=0;if(e.code=='KeyS'||e.code=='ArrowDown')inp.b=0;if(e.code=='KeyA'||e.code=='ArrowLeft')inp.l=0;if(e.code=='KeyD'||e.code=='ArrowRight')inp.r=0;if(e.code=='ShiftLeft'||e.code=='Space')inp.n=0});
+</script>
+</body>
+</html>
