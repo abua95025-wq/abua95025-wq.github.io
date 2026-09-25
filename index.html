@@ -3,46 +3,129 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>TAP DEFENSE</title>
-<style>html,body{margin:0;background:#0f0f14;height:100%;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;color:#fff;pointer-events:none;text-shadow:0 2px 8px #000}#over{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10}#over button{padding:16px 44px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial;color:#000;margin-top:16px}</style>
+<title>BUBBLE POP</title>
+<style>
+html,body{margin:0;height:100%;background:#070a14;overflow:hidden;font-family:Arial Black}
+canvas{display:block;width:100vw;height:100vh}
+#ui{position:fixed;top:14px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;pointer-events:none;text-shadow:0 2px 10px #000}
+#ui #score{font-size:48px;line-height:1}
+#ui #best{font-size:11px;opacity:.6;letter-spacing:2px}
+#over{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10;text-align:center}
+#over button{padding:16px 48px;border-radius:30px;border:0;background:#6c5cff;color:#fff;font:900 18px Arial;margin-top:20px}
+</style>
 </head>
 <body>
-<div id="ui"><div><div id="wave" style="font-size:28px">ВОЛНА 1</div><div id="score" style="font-size:12px;opacity:.7">0 УБИТО</div></div><div style="text-align:right"><div id="hp" style="font-size:22px;color:#ff4444">❤❤❤</div><div style="font-size:10px;opacity:.6">ДОМ</div></div></div>
-<div id="over"><h1 style="color:#ff4444;font-size:42px;margin:0">ДОМ ВЗЛОМАЛИ</h1><p id="final"></p><button onclick="location.reload()">ЗАНОВО</button></div>
+<div id="ui"><div id="score">0</div><div id="best">ТАПАЙ ПУЗЫРИ • НЕ ПРОПУСТИ 5 ШТУК</div></div>
+<div id="over"><h1 style="font-size:44px;margin:0;color:#6c5cff">КОНЕЦ</h1><p id="final" style="opacity:.7"></p><button onclick="location.reload()">ЕЩЕ РАЗ</button></div>
 <canvas id="c"></canvas>
 <script>
-const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let enemies=[], bullets=[], parts=[], hp=3, wave=1, killed=0, spawnT=0, run=true;
-function spawn(){let side=Math.floor(Math.random()*4); let x,y; if(side==0){x=Math.random()*W;y=-30} else if(side==1){x=W+30;y=Math.random()*H} else if(side==2){x=Math.random()*W;y=H+30} else {x=-30;y=Math.random()*H} enemies.push({x,y, hp:1+Math.floor(wave/3), spd:0.8+wave*0.08+Math.random()*0.6});}
-function shoot(tx,ty){
- let cx=W/2, cy=H/2; let ang=Math.atan2(ty-cy,tx-cx); bullets.push({x:cx,y:cy, vx:Math.cos(ang)*14, vy:Math.sin(ang)*14});
-}
-function upd(){
- if(!run) return;
- spawnT++; if(spawnT> Math.max(15, 70-wave*2)){spawnT=0; spawn(); if(Math.random()<0.3+wave*0.02) spawn();}
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+let W,H; function resize(){W=innerWidth;H=innerHeight;cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);} resize(); addEventListener('resize',resize);
 
- enemies.forEach(e=>{let dx=W/2-e.x, dy=H/2-e.y, d=Math.hypot(dx,dy); if(d<35){enemies.splice(enemies.indexOf(e),1); hp--; document.getElementById('hp').innerText='❤'.repeat(hp); if(hp<=0){run=false; over.style.display='flex'; final.innerText=`Волна ${wave} | Убито ${killed}`;} return;} e.x+=dx/d*e.spd; e.y+=dy/d*e.spd;});
- bullets.forEach(b=>{b.x+=b.vx; b.y+=b.vy;});
- bullets=bullets.filter(b=> b.x>-50&&b.x<W+50&&b.y>-50&&b.y<H+50);
+let bubbles=[], score=0, missed=0, run=true, lastSpawn=0;
+const colors=['#6c5cff','#00f2ff','#ff5c8a','#ffcc00','#00ff88'];
 
- for(let i=bullets.length-1;i>=0;i--) for(let j=enemies.length-1;j>=0;j--){ if(Math.hypot(bullets[i].x-enemies[j].x, bullets[i].y-enemies[j].y)<22){ enemies[j].hp--; bullets.splice(i,1); for(let k=0;k<6;k++) parts.push({x:enemies[j].x,y:enemies[j].y,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6,a:1}); if(enemies[j].hp<=0){enemies.splice(j,1); killed++; score.innerText=killed+' УБИТО'; if(killed%12==0){wave++; waveEl.innerText='ВОЛНА '+wave;}} break; } }
- parts.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.a-=0.03;}); parts=parts.filter(p=>p.a>0);
+function spawn(){
+  const r=26+Math.random()*22;
+  const x=r+Math.random()*(W-r*2);
+  const y=H+r+20;
+  const speed=1.2+Math.random()*1.8+score*0.02;
+  const col=colors[Math.floor(Math.random()*colors.length)];
+  bubbles.push({x,y,r,speed,col,pop:0});
 }
+
+function pop(b){
+  score++; document.getElementById('score').innerText=score;
+  b.pop=1; b.t=0;
+}
+
+function update(dt){
+  if(!run) return;
+  lastSpawn+=dt;
+  if(lastSpawn> 520 - Math.min(400, score*6)){ lastSpawn=0; spawn(); if(score>15 && Math.random()<0.4) spawn(); }
+
+  for(let i=bubbles.length-1;i>=0;i--){
+    let b=bubbles[i];
+    if(b.pop){
+      b.t+=dt; b.r+=0.8;
+      if(b.t>220){ bubbles.splice(i,1); }
+    } else {
+      b.y-=b.speed;
+      b.x+=Math.sin(b.y*0.01)*0.4;
+      if(b.y<-b.r-30){
+        bubbles.splice(i,1);
+        missed++;
+        if(missed>=5){
+          run=false;
+          document.getElementById('over').style.display='flex';
+          document.getElementById('final').innerText=`Очков: ${score} | Мой рекорд: 127`;
+        }
+      }
+    }
+  }
+}
+
 function draw(){
- X.fillStyle='#15151e'; X.fillRect(0,0,W,H);
+  ctx.clearRect(0,0,W,H);
 
- X.fillStyle='#0a0a12'; X.beginPath(); X.arc(W/2,H/2,42,0,7); X.fill();
- X.fillStyle='#ffcc00'; X.fillRect(W/2-22,H/2-22,44,44); X.fillStyle='#222'; X.fillRect(W/2-8,H/2-2,16,24);
- parts.forEach(p=>{X.globalAlpha=p.a; X.fillStyle='#ff4444'; X.fillRect(p.x,p.y,4,4);}); X.globalAlpha=1;
- enemies.forEach(e=>{X.fillStyle=e.hp>1?'#ff0000':'#888'; X.beginPath(); X.arc(e.x,e.y,14,0,7); X.fill(); X.fillStyle='#fff'; X.beginPath(); X.arc(e.x-4,e.y-3,3,0,7); X.arc(e.x+4,e.y-3,3,0,7); X.fill();});
- bullets.forEach(b=>{X.fillStyle='#ffcc00'; X.beginPath(); X.arc(b.x,b.y,5,0,7); X.fill();});
+  ctx.fillStyle='#070a14'; ctx.fillRect(0,0,W,H);
+  let g=ctx.createRadialGradient(W/2,H*0.7,0,W/2,H*0.7,H);
+  g.addColorStop(0,'rgba(108,92,255,.18)'); g.addColorStop(1,'rgba(7,10,20,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
- X.strokeStyle='rgba(255,255,255,.15)'; X.beginPath(); X.arc(W/2,H/2,70,0,7); X.stroke();
+  bubbles.forEach(b=>{
+    if(b.pop){
+      ctx.globalAlpha=1-b.t/220;
+      ctx.strokeStyle=b.col; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=1;
+    } else {
+     
+      ctx.fillStyle=b.col;
+      ctx.globalAlpha=0.85;
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.35;
+      ctx.fillStyle='#fff';
+      ctx.beginPath(); ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.28,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+  });
+
+ 
+  ctx.fillStyle='rgba(255,255,255,.15)';
+  for(let i=0;i<5;i++){
+    ctx.beginPath();
+    ctx.arc(20+i*18, H-18, 5,0,Math.PI*2);
+    if(i<missed) {ctx.fillStyle='#ff4444'; ctx.fill(); ctx.fillStyle='rgba(255,255,255,.15)';}
+    else ctx.strokeStyle='rgba(255,255,255,.25)', ctx.lineWidth=1.5, ctx.stroke();
+  }
 }
-(function loop(){upd();draw();requestAnimationFrame(loop)})();
-let waveEl=document.getElementById('wave'); let score=document.getElementById('score'); let over=document.getElementById('over'); let final=document.getElementById('final');
-cv.addEventListener('touchstart',e=>{e.preventDefault(); let t=e.touches[0]; shoot(t.clientX,t.clientY);},{passive:false});
-cv.addEventListener('mousedown',e=>{shoot(e.clientX,e.clientY);});
+
+let last=performance.now();
+(function loop(now){
+  let dt=now-last; last=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+})(performance.now());
+
+function hit(px,py){
+  if(!run) return;
+  for(let i=bubbles.length-1;i>=0;i--){
+    let b=bubbles[i];
+    if(b.pop) continue;
+    if(Math.hypot(px-b.x,py-b.y)<b.r+12){ pop(b); return; }
+  }
+}
+
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  let t=e.touches[0]; hit(t.clientX,t.clientY);
+},{passive:false});
+cv.addEventListener('mousedown',e=> hit(e.clientX,e.clientY));
+
+
+spawn(); setTimeout(spawn,400);
 </script>
 </body>
 </html>
