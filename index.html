@@ -3,65 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>M5 F90 City Drive</title>
-<style>body{margin:0;background:#111;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#fff;z-index:2;text-shadow:0 2px 4px #000}#pedals{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:15px;z-index:3}.btn{width:85px;height:85px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid #fff;color:#fff;font:900 14px Arial;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px)}#gas{background:rgba(46,204,113,.5)}#brake{background:rgba(231,76,60,.5)}</style>
+<title>M5 F90 City</title>
+<style>body{margin:0;background:#0f1419;overflow:hidden;font-family:Arial Black}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;color:#fff;z-index:5;text-shadow:0 2px 8px #000;pointer-events:none}#bar{width:140px;height:8px;background:rgba(255,255,255,.2);border-radius:10px;overflow:hidden}#fill{height:100%;background:#2ecc71;width:0%}#pedals{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:18px;z-index:5}.c{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.8);color:#fff;font:900 12px Arial;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);user-select:none}#gas{background:rgba(46,204,113,.45)}#brake{background:rgba(231,76,60,.45)}</style>
 </head>
 <body>
-<div id="ui"><span id="speed">0 KM/H</span><span>M5 F90</span></div>
+<div id="ui"><div><div id="spd" style="font-size:28px">0</div><div style="font-size:12px;opacity:.7">KM/H • M5 F90</div><div id="bar"><div id="fill"></div></div></div><div style="text-align:right;opacity:.6;font-size:11px">ГОРОД<br>DRIFT OFF</div></div>
 <canvas id="c"></canvas>
-<div id="pedals">
-<div style="display:flex;gap:12px"><div class="btn" id="left">◀ ЛЕВО</div><div class="btn" id="right">ПРАВО ▶</div></div>
-<div style="display:flex;gap:12px"><div class="btn" id="brake">ТОРМОЗ</div><div class="btn" id="gas">ГАЗ</div></div>
-</div>
+<div id="pedals"><div style="display:flex;gap:14px"><div class="c" id="L">◀</div><div class="c" id="R">▶</div></div><div style="display:flex;gap:14px"><div class="c" id="B">BRAKE</div><div class="c" id="G">GAS</div></div></div>
 <script>
-const cv=document.getElementById('c'), ctx=cv.getContext('2d'); let W,H; function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(2,0,0,2,0,0)}R(); onresize=R;
-let car={x:0,y:0,ang:-Math.PI/2, speed:0, max:9, steer:0};
-let keys={gas:0,brake:0,left:0,right:0};
-let city=[];
-for(let i=0;i<60;i++) city.push({x:(Math.random()-0.5)*3000, y:(Math.random()-0.5)*3000, w:80+Math.random()*120, h:80+Math.random()*120});
-
+const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function RS(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}RS();onresize=RS;
+let car={x:0,y:0,ang:-1.57,vx:0,vy:0,speed:0}; let inp={g:0,b:0,l:0,r:0};
+let buildings=[]; for(let i=-15;i<=15;i++) for(let j=-15;j<=15;j++){ if(i==0&&j==0) continue; if(Math.random()<0.7){ let bx=i*220+(Math.random()-0.5)*40, by=j*220+(Math.random()-0.5)*40; buildings.push({x:bx,y:by,w:70+Math.random()*60,h:70+Math.random()*60,c:Math.random()>0.5?'#1c2833':'#212f3d'}) } }
 function update(){
- if(keys.gas) car.speed+=0.18; else if(keys.brake) car.speed-=0.28; else car.speed*=0.985;
- car.speed=Math.max(-3, Math.min(car.max, car.speed));
- if(Math.abs(car.speed)>0.3){
-  if(keys.left) car.steer-=0.04; else if(keys.right) car.steer+=0.04; else car.steer*=0.85;
-  car.steer=Math.max(-0.08, Math.min(0.08, car.steer));
-  car.ang+=car.steer * (car.speed/4);
- }
- car.x+=Math.cos(car.ang)*car.speed;
- car.y+=Math.sin(car.ang)*car.speed;
- document.getElementById('speed').innerText=Math.abs(Math.floor(car.speed*22))+' KM/H';
+ let acc=0; if(inp.g) acc=0.32; if(inp.b) acc=-0.55;
+ let maxV=13.6; car.speed+=acc;
+ if(!inp.g&&!inp.b){ car.speed*=0.992; if(Math.abs(car.speed)<0.05) car.speed=0; }
+ car.speed=Math.max(-4,Math.min(maxV,car.speed));
+ let turn=0; if(inp.l) turn=-1; if(inp.r) turn=1;
+ let grip = 0.95 - Math.min(0.6, Math.abs(car.speed)/maxV * 0.5);
+ if(Math.abs(car.speed)>0.5){ car.ang+= turn * 0.045 * (car.speed/maxV*0.7+0.3); }
+ let sx=Math.cos(car.ang), sy=Math.sin(car.ang);
+ let fwd = car.vx*sx + car.vy*sy;
+ let side = car.vx*-sy + car.vy*sx;
+ side*=grip; fwd = car.speed;
+ car.vx = sx*fwd + -sy*side;
+ car.vy = sy*fwd + sx*side;
+ car.x+=car.vx; car.y+=car.vy;
+ for(let b of buildings){ if(Math.abs(car.x-b.x)<b.w/2+16 && Math.abs(car.y-b.y)<b.h/2+16){ car.x-=car.vx*1.2; car.y-=car.vy*1.2; car.speed*=0.5; } }
+ let kmh=Math.abs(Math.floor(car.speed*23.5)); document.getElementById('spd').innerText=kmh; document.getElementById('fill').style.width=Math.min(100,kmh/320*100)+'%';
 }
 function draw(){
- ctx.fillStyle='#2c3e50'; ctx.fillRect(0,0,W,H);
- ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-car.ang+Math.PI/2); ctx.translate(-car.x,-car.y);
- 
- ctx.strokeStyle='#34495e'; ctx.lineWidth=2; for(let i=-3000;i<=3000;i+=200){ ctx.beginPath(); ctx.moveTo(i,-3000); ctx.lineTo(i,3000); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-3000,i); ctx.lineTo(3000,i); ctx.stroke(); }
-
- city.forEach(b=>{
- 
-  if(Math.abs(car.x-b.x)<b.w/2+22 && Math.abs(car.y-b.y)<b.h/2+22){ car.speed*=-0.4; }
-  ctx.fillStyle='#1a1a1a'; ctx.fillRect(b.x-b.w/2, b.y-b.h/2, b.w, b.h);
-  ctx.fillStyle='#2c2c2c'; ctx.fillRect(b.x-b.w/2+6, b.y-b.h/2+6, b.w-12, b.h-12);
-  ctx.fillStyle='#f1c40f'; for(let i=0;i<3;i++) for(let j=0;j<2;j++) ctx.fillRect(b.x-b.w/2+12+i*18, b.y-b.h/2+12+j*18, 6,6);
+ X.fillStyle='#2a3a4a'; X.fillRect(0,0,W,H);
+ X.save(); X.translate(W/2,H/2); X.rotate(-car.ang+1.57); X.translate(-car.x,-car.y);
+ X.fillStyle='#1e2a36'; X.fillRect(-4000,-4000,8000,8000);
+ X.strokeStyle='#2c3e50'; X.lineWidth=90; X.lineCap='round';
+ for(let i=-4000;i<=4000;i+=220){ X.beginPath(); X.moveTo(i,-4000); X.lineTo(i,4000); X.stroke(); X.beginPath(); X.moveTo(-4000,i); X.lineTo(4000,i); X.stroke(); }
+ X.strokeStyle='#f1c40f'; X.lineWidth=2; X.setLineDash([18,18]); for(let i=-4000;i<=4000;i+=220){ X.beginPath(); X.moveTo(i,-4000); X.lineTo(i,4000); X.stroke(); X.beginPath(); X.moveTo(-4000,i); X.lineTo(4000,i); X.stroke(); } X.setLineDash([]);
+ buildings.forEach(b=>{
+  X.fillStyle='#0f1a24'; X.fillRect(b.x-b.w/2-8,b.y-b.h/2-8,b.w+16,b.h+16);
+  X.fillStyle=b.c; X.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h);
+  X.fillStyle='#34495e'; X.fillRect(b.x-b.w/2+4,b.y-b.h/2+4,b.w-8,6);
+  X.fillStyle='#f4d03f'; for(let k=0;k<3;k++) X.fillRect(b.x-b.w/2+10+k*14,b.y-b.h/2+14,5,5);
  });
- 
- ctx.save(); ctx.translate(car.x,car.y); ctx.rotate(car.ang);
- ctx.fillStyle='#000'; ctx.fillRect(-14,-24,28,48); 
- ctx.fillStyle='#0a3d8f'; ctx.fillRect(-13,-26,26,46); 
- ctx.fillStyle='#111'; ctx.fillRect(-13,-26,26,6); ctx.fillRect(-13,18,26,8); 
- ctx.fillStyle='#87ceeb'; ctx.fillRect(-11,-12,22,18); 
- ctx.fillStyle='#222'; ctx.fillRect(-15,-20,4,8); ctx.fillRect(11,-20,4,8); ctx.fillRect(-15,10,4,8); ctx.fillRect(11,10,4,8); 
- ctx.fillStyle='#ffeb3b'; ctx.fillRect(-10,-27,4,3); ctx.fillRect(6,-27,4,3); 
- ctx.restore();
- ctx.restore();
- ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(W/2,H/2+22,18,8,0,0,7); ctx.fill();
+ X.fillStyle='#1e8449'; for(let i=0;i<80;i++){ let tx=(Math.sin(i*1.7)*3000)%4000, ty=(Math.cos(i*2.3)*3000)%4000; X.beginPath(); X.arc(tx,ty,9,0,7); X.fill(); }
+ X.save(); X.translate(car.x,car.y); X.rotate(car.ang);
+ X.fillStyle='rgba(0,0,0,.4)'; X.beginPath(); X.ellipse(0,6,16,26,0,0,7); X.fill();
+ X.fillStyle='#0d3b8c'; X.fillRect(-13,-28,26,54);
+ X.fillStyle='#081f4a'; X.fillRect(-13,-28,26,8); X.fillRect(-13,22,26,8);
+ X.fillStyle='#aed6f1'; X.fillRect(-11,-8,22,16);
+ X.fillStyle='#111'; X.fillRect(-15,-20,5,9); X.fillRect(10,-20,5,9); X.fillRect(-15,12,5,9); X.fillRect(10,12,5,9);
+ X.fillStyle='#ffe600'; X.fillRect(-10,-29,5,2); X.fillRect(5,-29,5,2);
+ X.fillStyle='#e74c3c'; X.fillRect(-10,28,5,2); X.fillRect(5,28,5,2);
+ X.restore();
+ X.restore();
 }
-(function loop(){update();draw();requestAnimationFrame(loop)})();
-function bind(id,k){ const el=document.getElementById(id); const s=e=>{e.preventDefault();keys[k]=1}; const e=e=>{keys[k]=0}; el.addEventListener('touchstart',s,{passive:false}); el.addEventListener('touchend',e); el.addEventListener('mousedown',s); el.addEventListener('mouseup',e); el.addEventListener('mouseleave',e); }
-bind('gas','gas'); bind('brake','brake'); bind('left','left'); bind('right','right');
-addEventListener('keydown',e=>{ if(e.key=='ArrowUp'||e.key=='w') keys.gas=1; if(e.key=='ArrowDown'||e.key=='s') keys.brake=1; if(e.key=='ArrowLeft'||e.key=='a') keys.left=1; if(e.key=='ArrowRight'||e.key=='d') keys.right=1; });
-addEventListener('keyup',e=>{ if(e.key=='ArrowUp'||e.key=='w') keys.gas=0; if(e.key=='ArrowDown'||e.key=='s') keys.brake=0; if(e.key=='ArrowLeft'||e.key=='a') keys.left=0; if(e.key=='ArrowRight'||e.key=='d') keys.right=0; });
-</script>
-</body>
-</html>
+(function lp(){update();draw();requestAnimationFrame(lp)})();
+function bind(id
