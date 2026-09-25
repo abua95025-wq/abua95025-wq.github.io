@@ -1,140 +1,62 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Subway Surfers 3D</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#000;overflow:hidden;font-family:Arial;touch-action:none}
-  #game{width:100vw;height:100vh;position:relative;background:linear-gradient(#87CEEB 0%, #87CEEB 40%, #f0e68c 40%, #c2b280 100%);perspective:800px;overflow:hidden}
-  canvas{width:100%;height:100%;display:block}
-  #ui{position:absolute;top:0;left:0;right:0;padding:15px;display:flex;justify-content:space-between;color:white;font-weight:900;text-shadow:2px 2px 0 #000;font-size:22px;z-index:10}
-  #controls{position:absolute;bottom:0;left:0;right:0;height:60%;display:flex;z-index:10}
- .lane{flex:1}
-  #jump{position:absolute;top:0;left:0;right:0;height:50%}
-  #roll{position:absolute;bottom:0;left:0;right:0;height:50%}
-  #gameover{position:absolute;inset:0;background:rgba(0,0,0,0.85);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:20;color:white}
-  #gameover h1{font-size:48px;color:#ffeb3b;text-shadow:3px 3px 0 #000}
-  #gameover button{background:#4caf50;color:white;border:0;padding:15px 40px;font-size:22px;font-weight:900;border-radius:30px;margin-top:20px}
-</style>
-</head>
-<body>
-<div id="game">
-  <div id="ui"><div>💰 <span id="coins">0</span></div><div id="score">0</div></div>
-  <canvas id="c"></canvas>
-  <div id="controls">
-    <div class="lane" id="l0"></div><div class="lane" id="l1"></div><div class="lane" id="l2"></div>
-    <div id="jump"></div><div id="roll"></div>
-  </div>
-  <div id="gameover">
-    <h1 id="finalScore">0</h1>
-    <p style="margin:10px;font-size:20px">Набрано монет: <span id="finalCoins">0</span></p>
-    <button onclick="location.reload()">ИГРАТЬ СНОВА</button>
-  </div>
-</div>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Subway Surf - Original Gameplay</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px;color:#fff;font:900 20px Arial;text-shadow:0 2px 4px #000;z-index:2}#die{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:5;color:#fff}#die button{margin-top:20px;padding:14px 40px;border-radius:30px;border:0;background:#ffeb3b;font:900 18px Arial}</style></head>
+<body><div id="ui"><span>💰 <b id="co">0</b></span><span><b id="sc">0</b>m</span></div><canvas id="g"></canvas><div id="die"><h1 style="font-size:44px;color:#ffeb3b">WASTED!</h1><p id="f"></p><button onclick="location.reload()">RUN AGAIN</button></div>
 <script>
-const canvas=document.getElementById('c');const ctx=canvas.getContext('2d');
-let W,H;function resize(){W=canvas.width=window.innerWidth*2;H=canvas.height=window.innerHeight*2;canvas.style.width=window.innerWidth+'px';canvas.style.height=window.innerHeight+'px'}resize();window.onresize=resize;
-
-let lane=1,targetLane=1,laneX=[0.25,0.5,0.75],playerY=H*0.75;
-let x=W*0.5,y=playerY,vy=0,isJump=false,isRoll=false,rollTime=0;
-let speed=12,score=0,coins=0,obstacles=[],coinObjs=[],dist=0;
-let keys={};
-
-function spawn(){
-  if(Math.random()<0.03){
-    let l=Math.floor(Math.random()*3);
-    let type=Math.random()<0.5?'train':'barrier';
-    obstacles.push({lane:l,z:0,type:type,h:type==='train'?120:60})
-  }
-  if(Math.random()<0.08){
-    let l=Math.floor(Math.random()*3);
-    coinObjs.push({lane:l,z:0})
-  }
+c=document.getElementById('g');x=c.getContext('2d');let W,H,S=1;function R(){W=innerWidth;H=innerHeight;c.width=W*2;c.height=H*2;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(2,0,0,2,0,0)}R();onresize=R;
+let lane=1,tar=1,px=W/2,py=H*0.77,y=py,vy=0,jump=false,roll=false,rt=0,speed=11,score=0,coins=0,objs=[],t=0,run=true;
+function add(type,lane,z){objs.push({type,lane,z,hit:false})}
+function upd(){
+ if(!run) return;
+ score+=speed*0.12;co.innerText=coins;sc.innerText=Math.floor(score);
+ px+=(W*(0.25+tar*0.25)-px)*0.15;
+ if(jump){vy+=0.9;y+=vy;if(y>=py){y=py;jump=false;vy=0}}
+ if(roll){rt--;if(rt<=0)roll=false}
+ t+=speed; if(t>85){t=0;
+  let l=Math.floor(Math.random()*3);
+  let r=Math.random();
+  if(r<0.4) add('train',l,-300);
+  else if(r<0.6) add('low',l,-300);
+  else if(r<0.8) add('high',l,-300);
+  if(Math.random()<0.8){ let cl=Math.floor(Math.random()*3); for(let i=0;i<6;i++) add('coin',cl,-300-i*55) }
+ }
+ objs.forEach(o=>o.z+=speed); objs=objs.filter(o=>o.z<H+200);
+ for(let o of objs){
+  if(o.hit) continue;
+  if(o.z<py-70||o.z>py+20) continue;
+  if(Math.abs(o.lane-tar)>0.1 && Math.abs(W*(0.25+o.lane*0.25)-px)>40) continue;
+  if(o.type==='coin'){o.hit=true;coins++}
+  else if(o.type==='train'){die();break}
+  else if(o.type==='low' && (!jump || y>py-35)){die();break}
+  else if(o.type==='high' &&!roll){die();break}
+  else if(o.type==='low'||o.type==='high') o.hit=true;
+ }
+ if(speed<24) speed+=0.007;
 }
-
-function update(){
-  dist+=speed; score=Math.floor(dist/10); document.getElementById('score').innerText=score;
-  if(Math.abs(x - W*laneX[targetLane])>5) x+=(W*laneX[targetLane]-x)*0.15; else lane=targetLane;
-
-  if(isJump){ vy+=2; y+=vy; if(y>=playerY){y=playerY;isJump=false;vy=0;} }
-  if(isRoll){ rollTime--; if(rollTime<=0) isRoll=false; }
-
-  obstacles.forEach(o=>o.z+=speed); coinObjs.forEach(c=>c.z+=speed);
-  obstacles=obstacles.filter(o=>o.z<H+200); coinObjs=coinObjs.filter(c=>c.z<H+200);
-
-  // collisions
-  obstacles.forEach(o=>{
-    if(Math.abs(o.lane-lane)<0.5 && Math.abs(o.z - playerY)<80){
-      if(o.type==='train' ||!isRoll && o.type==='barrier' &&!isJump){ gameOver(); }
-      if(o.type==='barrier' && isRoll){ o.z=H+500; score+=50; }
-    }
-  });
-  coinObjs.forEach(c=>{
-    if(c.lane===lane && Math.abs(c.z - playerY)<70 &&!isRoll &&!isJump || c.lane===lane && Math.abs(c.z - playerY)<70 && isJump && y<playerY-20){
-      c.z=H+500; coins++; document.getElementById('coins').innerText=coins;
-    }
-  });
-  if(speed<28) speed+=0.01;
-}
-
 function draw(){
-  ctx.clearRect(0,0,W,H);
-  // tracks perspective
-  ctx.fillStyle='#555'; ctx.fillRect(0,0,W,H);
-  // sky
-  let grad=ctx.createLinearGradient(0,0,0,H*0.45); grad.addColorStop(0,'#5ec6ff'); grad.addColorStop(1,'#a7e9ff');
-  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H*0.45);
-  // rails
-  ctx.strokeStyle='#777'; ctx.lineWidth=2;
-  for(let i=0;i<4;i++){ let lx=W*(0.15+i*0.23); ctx.beginPath(); ctx.moveTo(lx,H*0.45); ctx.lineTo(W*laneX[i>2?2:i] + (lx-W*0.5)*0.2,H); ctx.stroke(); }
-  // coins & obstacles sorted by z
-  let all=[...coinObjs.map(o=>({...o,kind:'coin'})),...obstacles.map(o=>({...o,kind:'obs'}))].sort((a,b)=>a.z-b.z);
-  all.forEach(o=>{
-    let scale=o.z/H*0.9+0.1; let px=W*laneX[o.lane]; let py=o.z; let sz=50*scale;
-    if(o.kind==='coin'){
-      ctx.save(); ctx.translate(px,py); ctx.scale(scale,scale);
-      ctx.fillStyle='#ffeb3b'; ctx.strokeStyle='#ff9800'; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#ff9800'; ctx.font='bold 22px Arial'; ctx.fillText('$',-7,8);
-      ctx.restore();
-    }else{
-      ctx.save(); ctx.translate(px,py); ctx.scale(scale,scale);
-      if(o.type==='train'){ ctx.fillStyle='#2196f3'; ctx.fillRect(-60,-o.h,120,o.h); ctx.fillStyle='#1976d2'; ctx.fillRect(-60,-o.h,120,20); ctx.fillStyle='#fff'; ctx.fillRect(-40,-o.h+30,20,15); ctx.fillRect(20,-o.h+30,20,15); }
-      else{ ctx.fillStyle='#ff5722'; ctx.fillRect(-50,-15,100,30); }
-      ctx.restore();
-    }
-  });
-  // player shadow
-  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(W*laneX[lane],playerY+35,30* (isRoll?1.5:1),10,0,0,Math.PI*2); ctx.fill();
-  // player
-  ctx.save(); ctx.translate(x,y);
-  if(isRoll){ ctx.scale(1,0.5); }
-  // body
-  ctx.fillStyle='#ffeb3b'; ctx.fillRect(-18,-55,36,40);
-  ctx.fillStyle='#2196f3'; ctx.fillRect(-15,-15,30,30);
-  ctx.fillStyle='#ffb74d'; ctx.beginPath(); ctx.arc(0,-65,22,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#fff'; ctx.fillRect(-18,-35,36,8);
-  ctx.fillStyle='#000'; ctx.fillRect(-20,15,12,20); ctx.fillRect(8,15,12,20);
-  ctx.restore();
+ x.clearRect(0,0,W,H);
+ let g=x.createLinearGradient(0,0,0,H*0.48);g.addColorStop(0,'#4fc3f7');g.addColorStop(1,'#b3e5fc');x.fillStyle=g;x.fillRect(0,0,W,H*0.48);
+ x.fillStyle='#616161';x.fillRect(0,H*0.48,W,H*0.52);
+ x.strokeStyle='#757575'; for(let i=0;i<4;i++){let a=W*(0.08+i*0.28),b=W*(0.25+i*0.25*0.9);x.beginPath();x.moveTo(a,H*0.48);x.lineTo(b,H);x.stroke()}
+ objs.sort((a,b)=>a.z-b.z); objs.forEach(o=>{
+  if(o.hit && o.type!=='coin') return;
+  if(o.z<-100) return;
+  let p=o.z/H, sc=Math.max(0.15,p*1.15), X=W*0.5+(W*(0.25+o.lane*0.25)-W*0.5)*(0.15+p*0.85);
+  x.save();x.translate(X,o.z);x.scale(sc,sc);
+  if(o.type==='coin'&&!o.hit){x.fillStyle='#ffeb3b';x.beginPath();x.arc(0,0,16,0,7);x.fill();x.fillStyle='#f57f17';x.font='bold 16px Arial';x.fillText('$',-5,6)}
+  else if(o.type==='train'){x.fillStyle='#1e88e5';x.fillRect(-50,-85,100,85);x.fillStyle='#0d47a1';x.fillRect(-50,-85,100,14);x.fillStyle='#bbdefb';x.fillRect(-30,-65,18,14);x.fillRect(12,-65,18,14)}
+  else if(o.type==='low'){x.fillStyle='#ef6c00';x.fillRect(-40,-10,80,20)}
+  else if(o.type==='high'){x.fillStyle='#ef6c00';x.fillRect(-40,-60,80,16);x.fillRect(-40,-60,10,70);x.fillRect(30,-60,10,70)}
+  x.restore();
+ });
+ x.fillStyle='rgba(0,0,0,0.2)';x.beginPath();x.ellipse(px,py+20,roll?30:20,6,0,0,7);x.fill();
+ x.save();x.translate(px,y);if(roll)x.scale(1,0.5);x.fillStyle='#ffeb3b';x.fillRect(-14,-48,28,30);x.fillStyle='#1565c0';x.fillRect(-12,-18,24,24);x.fillStyle='#ffcc80';x.beginPath();x.arc(0,-58,18,0,7);x.fill();x.restore();
 }
-
-function gameOver(){ document.getElementById('gameover').style.display='flex'; document.getElementById('finalScore').innerText=score; document.getElementById('finalCoins').innerText=coins; running=false; }
-let running=true;
-function loop(){ if(!running) return; spawn(); update(); draw(); requestAnimationFrame(loop);} loop();
-
-function moveLeft(){ if(targetLane>0) targetLane--; } function moveRight(){ if(targetLane<2) targetLane++; }
-function jump(){ if(!isJump &&!isRoll){ isJump=true; vy=-32; } }
-function roll(){ if(!isJump &&!isRoll){ isRoll=true; rollTime=30; } }
-
-document.getElementById('l0').onclick=moveLeft; document.getElementById('l2').onclick=moveRight;
-document.getElementById('l1').onclick=jump;
-document.getElementById('jump').ontouchstart=e=>{e.preventDefault(); let t=e.touches[0].clientX/W; if(t<0.33) moveLeft(); else if(t>0.66) moveRight(); else jump(); };
-document.getElementById('roll').ontouchstart=e=>{e.preventDefault(); roll(); };
-document.onkeydown=e=>{ if(e.code==='ArrowLeft'||e.code==='KeyA') moveLeft(); if(e.code==='ArrowRight'||e.code==='KeyD') moveRight(); if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW') jump(); if(e.code==='ArrowDown'||e.code==='KeyS') roll(); };
-let sx=0,sy=0; document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;});
-document.addEventListener('touchend',e=>{ let dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy; if(Math.abs(dx)>Math.abs(dy)){ if(dx<-30) moveLeft(); if(dx>30) moveRight(); }else{ if(dy<-30) jump(); if(dy>30) roll(); } });
-</script>
-</body>
-</html>
+function die(){run=false;document.getElementById('die').style.display='flex';document.getElementById('f').innerText=`Score ${Math.floor(score)}m | Coins ${coins}`; }
+(function L(){upd();draw();requestAnimationFrame(L)})();
+function L(){if(tar>0)tar--}function Rr(){if(tar<2)tar++}function J(){if(!jump&&!roll){jump=true;vy=-19}}function Ro(){if(!jump&&!roll){roll=true;rt=38}}
+onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='a')L();if(e.key==='ArrowRight'||e.key==='d')Rr();if(e.key===' '||e.key==='ArrowUp'||e.key==='w')J();if(e.key==='ArrowDown'||e.key==='s')Ro()};
+let sx=0,sy=0;addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:false});
+addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)){dx<-20?L():dx>20&&Rr()}else{dy<-20?J():dy>20&&Ro()}},{passive:false});
+</script></body></html>
