@@ -35,27 +35,26 @@ function update(){
 function draw(){
  ctx.fillStyle='#2c3e50'; ctx.fillRect(0,0,W,H);
  ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-car.ang+Math.PI/2); ctx.translate(-car.x,-car.y);
- // дороги сетка
+ 
  ctx.strokeStyle='#34495e'; ctx.lineWidth=2; for(let i=-3000;i<=3000;i+=200){ ctx.beginPath(); ctx.moveTo(i,-3000); ctx.lineTo(i,3000); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-3000,i); ctx.lineTo(3000,i); ctx.stroke(); }
- // дома
+
  city.forEach(b=>{
-  // коллизия с домом - простой отталкивание
+ 
   if(Math.abs(car.x-b.x)<b.w/2+22 && Math.abs(car.y-b.y)<b.h/2+22){ car.speed*=-0.4; }
   ctx.fillStyle='#1a1a1a'; ctx.fillRect(b.x-b.w/2, b.y-b.h/2, b.w, b.h);
   ctx.fillStyle='#2c2c2c'; ctx.fillRect(b.x-b.w/2+6, b.y-b.h/2+6, b.w-12, b.h-12);
   ctx.fillStyle='#f1c40f'; for(let i=0;i<3;i++) for(let j=0;j<2;j++) ctx.fillRect(b.x-b.w/2+12+i*18, b.y-b.h/2+12+j*18, 6,6);
  });
- // машина M5 F90 вид сверху
+ 
  ctx.save(); ctx.translate(car.x,car.y); ctx.rotate(car.ang);
- ctx.fillStyle='#000'; ctx.fillRect(-14,-24,28,48); // тень
- ctx.fillStyle='#0a3d8f'; ctx.fillRect(-13,-26,26,46); // кузов синий M5
- ctx.fillStyle='#111'; ctx.fillRect(-13,-26,26,6); ctx.fillRect(-13,18,26,8); // бамперы
- ctx.fillStyle='#87ceeb'; ctx.fillRect(-11,-12,22,18); // стекло
- ctx.fillStyle='#222'; ctx.fillRect(-15,-20,4,8); ctx.fillRect(11,-20,4,8); ctx.fillRect(-15,10,4,8); ctx.fillRect(11,10,4,8); // колеса
- ctx.fillStyle='#ffeb3b'; ctx.fillRect(-10,-27,4,3); ctx.fillRect(6,-27,4,3); // фары
+ ctx.fillStyle='#000'; ctx.fillRect(-14,-24,28,48); 
+ ctx.fillStyle='#0a3d8f'; ctx.fillRect(-13,-26,26,46); 
+ ctx.fillStyle='#111'; ctx.fillRect(-13,-26,26,6); ctx.fillRect(-13,18,26,8); 
+ ctx.fillStyle='#87ceeb'; ctx.fillRect(-11,-12,22,18); 
+ ctx.fillStyle='#222'; ctx.fillRect(-15,-20,4,8); ctx.fillRect(11,-20,4,8); ctx.fillRect(-15,10,4,8); ctx.fillRect(11,10,4,8); 
+ ctx.fillStyle='#ffeb3b'; ctx.fillRect(-10,-27,4,3); ctx.fillRect(6,-27,4,3); 
  ctx.restore();
  ctx.restore();
- // мини машина по центру для красоты
  ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(W/2,H/2+22,18,8,0,0,7); ctx.fill();
 }
 (function loop(){update();draw();requestAnimationFrame(loop)})();
