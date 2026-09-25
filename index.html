@@ -1,48 +1,52 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <style>
-body{margin:0;background:#87CEEB;font-family:Arial}
-#field{position:relative;width:100%;height:400px;background:#a0e0ff;border:4px solid #000;overflow:hidden}
-#me{position:absolute;width:22px;height:22px;background:lime;border:3px solid #000;left:20px;top:20px;z-index:5}
-#enemy{position:absolute;width:24px;height:24px;background:red;border:3px solid #000;left:300px;top:300px}
-.coin{position:absolute;width:20px;height:20px;background:yellow;border:3px solid #000}
-.wall{position:absolute;background:#333}
-#pad{padding:10px;display:flex;justify-content:center;gap:12px;background:#222}
-.b{width:70px;height:70px;background:#fff;border:3px solid #000;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:28px}
-.b:active{background:yellow}
+body{margin:0;background:#7ec8f0;font-family:Arial;overflow:hidden}
+#top{background:#e0f0ff;margin:10px;border-radius:20px;padding:10px;text-align:center;font:900 20px Arial;color:#2a4a9a}
+#field{position:relative;width:95%;height:75vh;margin:0 auto;background:#7ec8f0;overflow:hidden}
+.wall{position:absolute;background:#4a4e5e;border-radius:15px;box-shadow:inset 0 -8px 0 #2f3240}
+#me{position:absolute;width:28px;height:28px;background:#7ed957;border-radius:8px;left:50px;top:520px;z-index:10;border:3px solid #2a4a2a;display:flex;align-items:center;justify-content:center;font-size:18px}
+#enemy{position:absolute;width:30px;height:30px;background:#ff4a4a;border-radius:10px;left:220px;top:360px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.coin{position:absolute;width:26px;height:26px;background:#ffdd00;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 3px 0 #c9a900}
+#pad{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:15px;padding:12px;background:#2a4a9a}
+.b{width:65px;height:65px;background:#fff;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid #000}
+.b:active{background:yellow;transform:scale(0.9)}
 </style></head><body>
-<div style="background:#000;color:yellow;text-align:center;padding:10px;font-weight:900">⬆️ ЗДЕСЬ ИГРА ⬆️ ЗЕЛЕНЫЙ = ТЫ</div>
+<div id="top">SCORE: 0 LIVES: 3 ❤️</div>
 <div id="field">
-<div id="me"></div>
-<div id="enemy"></div>
-<div class="coin" style="left:150px;top:100px"></div>
-<div class="coin" style="left:250px;top:200px"></div>
-<div class="coin" style="left:100px;top:300px"></div>
-<div class="wall" style="left:100px;top:0;width:20px;height:300px"></div>
-<div class="wall" style="left:200px;top:100px;width:20px;height:300px"></div>
+<div class="wall" style="left:10px;top:10px;width:20px;height:300px"></div>
+<div class="wall" style="left:10px;top:10px;width:150px;height:20px"></div>
+<div class="wall" style="left:140px;top:10px;width:20px;height:100px"></div>
+<div class="wall" style="left:80px;top:80px;width:100px;height:20px"></div>
+<div class="wall" style="left:200px;top:10px;width:150px;height:20px"></div>
+<div class="wall" style="left:180px;top:100px;width:120px;height:20px"></div>
+<div class="wall" style="left:230px;top:100px;width:20px;height:120px"></div>
+<div class="wall" style="left:60px;top:170px;width:20px;height:130px"></div>
+<div class="wall" style="left:60px;top:170px;width:140px;height:20px"></div>
+<div class="wall" style="left:60px;top:300px;width:280px;height:20px"></div>
+
+<div id="me">😊</div>
+<div id="enemy">👹</div>
+<div class="coin" style="left:200px;top:40px">⭐</div>
+<div class="coin" style="left:220px;top:150px">⭐</div>
+<div class="coin" style="left:300px;top:200px">⭐</div>
+<div class="coin" style="left:30px;top:310px">⭐</div>
+<div class="coin" style="left:80px;top:370px">⭐</div>
 </div>
-<div id="pad">
-<div class="b" id="L">◀</div>
-<div class="b" id="U">▲</div>
-<div class="b" id="D">▼</div>
-<div class="b" id="R">▶</div>
-</div>
+<div id="pad"><div class="b" id="L">◀</div><div class="b" id="U">▲</div><div class="b" id="D">▼</div><div class="b" id="R">▶</div></div>
 <script>
-let me=document.getElementById('me'), en=document.getElementById('enemy'), fx=20, fy=20, ex=300, ey=300, k={}, coins=document.querySelectorAll('.coin'), got=0;
+let me=document.getElementById('me'), fx=50, fy=520, k={}, score=0;
+let coins=document.querySelectorAll('.coin');
 setInterval(()=>{
- if(k.U) fy-=4; if(k.D) fy+=4; if(k.L) fx-=4; if(k.R) fx+=4;
- if(fx<0)fx=0; if(fy<0)fy=0; if(fx>350)fx=350; if(fy>370)fy=370;
+ if(k.U) fy-=5; if(k.D) fy+=5; if(k.L) fx-=5; if(k.R) fx+=5;
+ if(fx<0)fx=0; if(fy<0)fy=0; if(fx>350)fx=350; if(fy>600)fy=600;
  me.style.left=fx+'px'; me.style.top=fy+'px';
- if(fx>80&&fx<120&&fy<300) fx=80; // стена
- if(fx>180&&fx<220&&fy>100) fx=180;
- ex+=(fx>ex?1:-1)*0.8; ey+=(fy>ey?1:-1)*0.8;
- en.style.left=ex+'px'; en.style.top=ey+'px';
  coins.forEach(c=>{
+  if(c.style.display=='none') return;
   let cx=parseInt(c.style.left), cy=parseInt(c.style.top);
-  if(Math.abs(cx-fx)<22&&Math.abs(cy-fy)<22&&c.style.display!='none'){c.style.display='none'; got++; if(got==3){alert('ПОБЕДА!'); location.reload();}}
+  if(Math.abs(cx-fx)<25 && Math.abs(cy-fy)<25){c.style.display='none'; score++; document.getElementById('top').innerText='SCORE: '+score+' LIVES: 3 ❤️'; if(score==5){alert('ПОБЕДА БРО!'); location.reload();}}
  });
- if(Math.abs(ex-fx)<22&&Math.abs(ey-fy)<22){alert('ПОЙМАЛИ'); location.reload();}
 },20);
-function b(id,key){let e=document.getElementById(id); e.ontouchstart=(ev)=>{ev.preventDefault(); k[key]=1}; e.ontouchend=()=>k[key]=0; e.onmousedown=()=>k[key]=1; e.onmouseup=()=>k[key]=0; e.onmouseleave=()=>k[key]=0;}
-b('U','U'); b('D','D'); b('L','L'); b('R','R');
+function bind(id,key){let e=document.getElementById(id); e.ontouchstart=(ev)=>{ev.preventDefault(); k[key]=1}; e.ontouchend=()=>k[key]=0; e.onmousedown=()=>k[key]=1; e.onmouseup=()=>k[key]=0; e.onmouseleave=()=>k[key]=0;}
+bind('U','U'); bind('D','D'); bind('L','L'); bind('R','R');
 </script></body></html>
