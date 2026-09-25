@@ -1,57 +1,55 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>ДОМ 13 FIX</title>
-<style>
-html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none}
-canvas{width:100vw;height:100vh;display:block}
-#ui{position:fixed;top:10px;left:0;right:0;padding:0 14px;color:#fff;display:flex;justify-content:space-between;font:900 13px Arial;pointer-events:none}
-#pad{position:fixed;bottom:10px;left:0;right:0;display:flex;justify-content:space-between;padding:0 10px;pointer-events:none}
-#leftpad,#rightpad{display:grid;grid-template-columns:60px 60px 60px;grid-template-rows:60px 60px;gap:8px;pointer-events:auto}
-.btn{width:60px;height:60px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font:900 22px Arial;user-select:none;-webkit-user-select:none}
-.btn:active{background:rgba(255,204,0,.5);border-color:#ffcc00}
-#end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99;text-align:center;padding:20px}
-</style></head><body>
-<div id="ui"><div id="n">ЗАПИСКИ 0/3</div><div id="b">🔦100%</div></div>
-<div id="pad">
-<div id="leftpad"><div></div><div class="btn" id="up">▲</div><div></div><div class="btn" id="left">◀</div><div class="btn" id="down">▼</div><div class="btn" id="right">▶</div></div>
-<div id="rightpad" style="align-items:end"><div class="btn" id="flash" style="width:80px;height:80px;background:rgba(255,204,0,.2);border-color:#ffcc00;color:#ffcc00;font-size:10px">СВЕТ<br>💡</div></div>
-</div>
-<div id="end"><h1 id="t1" style="font-size:36px;margin:0">КОНЕЦ</h1><p id="t2"></p><button onclick="location.reload()" style="padding:16px 50px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial;margin-top:20px">ЗАНОВО</button></div>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>DOM 13 FIXED</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:10px;left:0;right:0;padding:0 14px;color:#fff;display:flex;justify-content:space-between;font:900 12px Arial;pointer-events:none}#pad{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none}#g{pointer-events:auto;display:grid;grid-template-columns:60px 60px 60px;gap:8px}.b{width:60px;height:60px;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font:900 22px Arial}.b:active{background:#ffcc00;color:#000}#end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99;text-align:center}</style></head><body>
+<div id="ui"><div id="n">ЗАПИСКИ 0/3</div><div id="bb">🔦100%</div></div>
+<div id="pad"><div id="g"><div></div><div class="b" id="up">▲</div><div></div><div class="b" id="lf">◀</div><div class="b" id="dn">▼</div><div class="b" id="rt">▶</div></div><div class="b" id="fl" style="width:74px;height:74px;border-color:#ffcc00;color:#ffcc00;font-size:11px">СВЕТ</div></div>
+<div id="end"><h1 id="tt" style="margin:0;font-size:36px">КОНЕЦ</h1><p id="pp"></p><button onclick="location.reload()" style="padding:14px 40px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial">ЗАНОВО</button></div>
 <canvas id="c"></canvas>
 <script>
 const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let px=60,py=60,keys={},bat=100,on=true,notes=0,run=true,mx=500,my=500,t=0;
-let map=["####################","#........#.........#","#..###...#...###...#","#..................#","#..###..#####..###..#","#..................#","####..#######..#####","#.....#.....#......#","####..#######..#####","#..................#","#..###..#####..###.#","#..................#","#..................#","#..................#","####################"];
-let npos=[[3,2],[15,8],[3,13]],nt=[0,0,0];
-function wall(x,y){let gx=x/32|0,gy=y/32|0;if(gy<0||gy>=map.length||gx<0||gx>=20)return true;return map[gy][gx]=='#';}
+let px=1.5,py=1.5,keys={},bat=100,on=true,notes=0,run=true,mx=10,my=10,t=0;
+let map=["####################","#........#.........#","#..###...#...###...#","#..#...............#","#..###..#####..###..#","#..................#","####..#######..#####","#.....#.....#......#","#.....#.....#......#","####..#######..#####","#..................#","#..###..#####..###.#","#..................#","####################"];
+let npos=[[2,2],[15,7],[2,12]],nt=[0,0,0];
+function wall(x,y){let gx=Math.floor(x),gy=Math.floor(y);if(gy<0||gy>=map.length||gx<0||gx>=20)return true;return map[gy][gx]=='#';}
+function canMove(x,y){return!wall(x+0.3,y+0.3)&&!wall(x-0.3,y+0.3)&&!wall(x+0.3,y-0.3)&&!wall(x-0.3,y-0.3);}
 function upd(dt){
  if(!run)return; t+=dt/1000;
- let dx=0,dy=0; if(keys.up)dy=-1; if(keys.down)dy=1; if(keys.left)dx=-1; if(keys.right)dx=1;
- let nx=px+dx*1.8, ny=py+dy*1.8;
- if(!wall(nx,py))px=nx; if(!wall(px,ny))py=ny;
- npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0]*32,py-p[1]*32)<28){nt[i]=1;notes++; n.innerText='ЗАПИСКИ '+notes+'/3'; if(notes==3){run=false; end.style.display='flex'; t1.innerText='ТЫ СБЕЖАЛ!'; t2.innerText='Собрал все записки и выжил';}}});
- if(t>8){let d=Math.hypot(px-mx,py-my); if(d>5){mx+=(px-mx)/d*1.0; my+=(py-my)/d*1.0;} if(d<22){run=false; end.style.display='flex'; t1.innerText='ПОЙМАЛИ'; t2.innerText='Оно было прямо за тобой...';}}
- if(on){bat-=dt*0.008; if(bat<0)bat=0; b.innerText='🔦'+(bat|0)+'%'; if(bat==0)on=false;}
+ let dx=0,dy=0; if(keys.up)dy=-1; if(keys.dn)dy=1; if(keys.lf)dx=-1; if(keys.rt)dx=1;
+ let sp=2.5*dt/16; let nx=px+dx*sp*0.04, ny=py+dy*sp*0.04;
+ if(canMove(nx,py)) px=nx; if(canMove(px,ny)) py=ny;
+ npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0],py-p[1])<0.8){nt[i]=1;notes++; document.getElementById('n').innerText='ЗАПИСКИ '+notes+'/3'; if(notes==3){run=false; end.style.display='flex'; tt.innerText='СБЕЖАЛ!'; pp.innerText='Ты нашел все записки';}}});
+ if(t>5){
+  
+  let msp=1.4*dt/16*0.04; 
+  let best=null,bd=1e9;
+  [[mx+ msp,my],[mx- msp,my],[mx,my+ msp],[mx,my- msp]].forEach(([tx,ty])=>{
+    if(!canMove(tx,ty)) return;
+    let d=Math.hypot(px-tx,py-ty); if(d<bd){bd=d; best=[tx,ty];}
+  });
+  if(best){mx=best[0]; my=best[1];}
+  if(Math.hypot(px-mx,py-my)<0.6){run=false; end.style.display='flex'; tt.innerText='ПОЙМАЛ!'; pp.innerText='Он был быстрее...';}
+ }
+ if(on){bat-=dt*0.006; if(bat<0)bat=0; bb.innerText='🔦'+(bat|0)+'%'; if(bat==0)on=false;}
 }
 function draw(){
- X.fillStyle='#07070a'; X.fillRect(0,0,W,H);
- X.save(); X.translate(W/2,H/2); X.translate(-px,-py);
- for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#171723'; X.fillRect(x*32,y*32,32,32); X.fillStyle='#232335'; X.fillRect(x*32,y*32,32,4);}
- npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffcc00'; X.fillRect(p[0]*32+10,p[1]*32+10,12,14); X.fillStyle='#000'; X.fillRect(p[0]*32+12,p[1]*32+14,8,2);}});
- X.fillStyle='#ff0022'; X.beginPath(); X.arc(mx,my,10,0,7); X.fill();
- X.restore();
- let r=on?190+bat:45; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+600);
- g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.3,'rgba(0,0,0,0.2)'); g.addColorStop(0.55,'rgba(0,0,0,0.88)'); g.addColorStop(1,'#000');
- X.fillStyle=g; X.fillRect(0,0,W,H);
- X.fillStyle='#fff'; X.beginPath(); X.arc(W/2,H/2,4,0,7); X.fill();
+ X.fillStyle='#080a0f'; X.fillRect(0,0,W,H);
+ let cs=24, ox=W/2-px*cs, oy=H/2-py*cs;
+ for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#151525'; X.fillRect(x*cs+ox,y*cs+oy,cs,cs); X.fillStyle='#22223a'; X.fillRect(x*cs+ox,y*cs+oy,cs,4);}
+ npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffcc00'; X.fillRect(p[0]*cs+ox+6,p[1]*cs+oy+6,12,14);}});
+
+ X.fillStyle='#ff0022'; X.beginPath(); X.arc(mx*cs+ox+12,my*cs+oy+12,8,0,7); X.fill();
+ X.fillStyle='#fff'; X.beginPath(); X.arc(mx*cs+ox+9,my*cs+oy+9,2,0,7); X.arc(mx*cs+ox+15,my*cs+oy+9,2,0,7); X.fill();
+
+ X.fillStyle='#00ff88'; X.beginPath(); X.arc(W/2,H/2,8,0,7); X.fill();
+ X.fillStyle='#000'; X.fillRect(W/2-3,H/2-2,6,2);
+
+ if(on){X.save(); X.translate(W/2,H/2); let a=Math.atan2(keys.dn-keys.up,keys.rt-keys.lf); if(keys.up||keys.dn||keys.lf||keys.rt){X.rotate(a);} X.fillStyle='rgba(255,240,150,0.15)'; X.beginPath(); X.moveTo(0,0); X.lineTo(300,-90); X.lineTo(300,90); X.closePath(); X.fill(); X.restore();}
+ 
+ let r=on?220+bat*1.2:55; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+700); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.3,'rgba(0,0,0,0.3)'); g.addColorStop(0.65,'rgba(0,0,0,0.92)'); g.addColorStop(1,'#000'); X.fillStyle=g; X.fillRect(0,0,W,H);
 }
-let last=performance.now(); (function loop(a){let dt=a-last; last=a; if(dt<100) upd(dt); draw(); requestAnimationFrame(loop)})(last);
-function bind(id,key){let el=document.getElementById(id);
- let start=e=>{e.preventDefault(); keys[key]=1;}; let end=e=>{e.preventDefault(); keys[key]=0;};
- el.addEventListener('touchstart',start,{passive:false}); el.addEventListener('touchend',end,{passive:false}); el.addEventListener('touchcancel',end,{passive:false});
- el.addEventListener('mousedown',start); addEventListener('mouseup',end);
-}
-bind('up','up'); bind('down','down'); bind('left','left'); bind('right','right');
-document.getElementById('flash').addEventListener('touchstart',e=>{e.preventDefault(); if(bat>0) on=!on;},{passive:false});
-document.getElementById('flash').addEventListener('mousedown',e=>{if(bat>0) on=!on;});
-const end=document.getElementById('end'), t1=document.getElementById('t1'), t2=document.getElementById('t2'), n=document.getElementById('n'), b=document.getElementById('b');
+let last=performance.now(); (function L(a){let dt=a-last; last=a; if(dt<50) upd(dt); draw(); requestAnimationFrame(L)})(last);
+function bind(id,k){let e=document.getElementById(id); let s=ev=>{ev.preventDefault(); keys[k]=1;}; let en=ev=>{ev.preventDefault(); keys[k]=0;}; e.addEventListener('touchstart',s,{passive:false}); e.addEventListener('touchend',en,{passive:false}); e.addEventListener('touchcancel',en,{passive:false}); e.addEventListener('mousedown',s); window.addEventListener('mouseup',en);}
+bind('up','up'); bind('dn','dn'); bind('lf','lf'); bind('rt','rt');
+document.getElementById('fl').addEventListener('touchstart',e=>{e.preventDefault(); if(bat>0) on=!on;},{passive:false});
+const end=document.getElementById('end'),tt=document.getElementById('tt'),pp=document.getElementById('pp'),n=document.getElementById('n'),bb=document.getElementById('bb');
 </script></body></html>
