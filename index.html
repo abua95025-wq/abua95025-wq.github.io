@@ -1,45 +1,56 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>DOM 13 LIGHT</title>
-<style>html,body{margin:0;height:100%;background:#0a0e1a;overflow:hidden;touch-action:none}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:10px;left:0;right:0;padding:0 14px;color:#fff;display:flex;justify-content:space-between;font:900 13px Arial;pointer-events:none;z-index:5}#pad{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;z-index:5}#g{pointer-events:auto;display:grid;grid-template-columns:60px 60px 60px;gap:8px}.b{width:60px;height:60px;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.5);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font:900 22px Arial}.b:active{background:#ffcc00;color:#000}#end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99}</style></head><body>
-<div id="ui"><div id="n">ЗАПИСКИ 0/3</div><div id="bb">🔦100%</div></div>
-<div id="pad"><div id="g"><div></div><div class="b" id="up">▲</div><div></div><div class="b" id="lf">◀</div><div class="b" id="dn">▼</div><div class="b" id="rt">▶</div></div><div class="b" id="fl" style="width:74px;height:74px;border-color:#ffcc00;color:#ffcc00;font-size:11px">СВЕТ</div></div>
-<div id="end"><h1 id="tt" style="margin:0;font-size:36px">КОНЕЦ</h1><p id="pp"></p><button onclick="location.reload()" style="padding:14px 40px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial">ЗАНОВО</button></div>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>DOM 13 BLOOD</title>
+<style>html,body{margin:0;height:100%;background:#0a0e1a;overflow:hidden;touch-action:none}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:8px;left:0;right:0;padding:0 12px;color:#ff4444;display:flex;justify-content:space-between;font:900 13px Arial;z-index:5}#pad{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:space-between;z-index:5}#g{display:grid;grid-template-columns:58px 58px 58px;gap:6px}.b{width:58px;height:58px;background:rgba(0,0,0,.5);border:2px solid rgba(255,80,80,.6);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#ff6666;font:900 20px Arial}.b:active{background:#ff2233;color:#fff}#end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99;padding:20px;text-align:center}</style></head><body>
+<div id="ui"><div id="n" style="color:#ffcc00">ЗАПИСКИ 0/3</div><div id="bb">❤️ ПУЛЬС 80</div></div>
+<div id="pad"><div id="g"><div></div><div class="b" id="up">▲</div><div></div><div class="b" id="lf">◀</div><div class="b" id="dn">▼</div><div class="b" id="rt">▶</div></div><div class="b" id="fl" style="width:70px;height:70px;border-color:#ffcc00;color:#ffcc00;font-size:9px;text-align:center">КРИК<br>😱</div></div>
+<div id="end"><h1 id="tt" style="margin:0;font-size:42px;color:#ff2233">УМЕР</h1><p id="pp" style="color:#aaa"></p><button onclick="location.reload()" style="padding:14px 44px;border-radius:30px;border:0;background:#ff2233;color:#fff;font:900 18px Arial">ЗАНОВО</button></div>
 <canvas id="c"></canvas>
 <script>
 const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let px=1.5,py=1.5,keys={},bat=100,on=true,notes=0,run=true,mx=10,my=10,t=0;
-let map=["####################","#........#.........#","#..###...#...###...#","#..#...............#","#..###..#####..###..#","#..................#","####..#######..#####","#.....#.....#......#","####..#######..#####","#..................#","#..###..#####..###.#","#..................#","####################"];
-let npos=[[2,2],[15,7],[2,12]],nt=[0,0,0];
+let px=2,py=2,keys={},notes=0,run=true,mx=12,my=10,t=0,pulse=80,scare=0;
+let map=["####################","#........#.........#","#..###...#...###...#","#..#....B..........#","#..###..#####..###..#","#......B...........#","####..#######..#####","#.....#.....#......#","####..#######..#####","#........B.........#","#..###..#####..###.#","#..................#","####################"];
+let blood=[[4,4],[5,5],[6,5],[10,3],[12,9],[3,10],[8,6]]; ]
+let npos=[[2,2],[15,7],[2,11]],nt=[0,0,0];
+let msgs=["ПОМОГИ","ОН ЗДЕСЬ","НЕ СМОТРИ","БЕГИ","ОН ЗА ТОБОЙ"];
 function wall(x,y){let gx=Math.floor(x),gy=Math.floor(y);if(gy<0||gy>=map.length||gx<0||gx>=20)return true;return map[gy][gx]=='#';}
-function canMove(x,y){return!wall(x+0.25,y+0.25)&&!wall(x-0.25,y+0.25)&&!wall(x+0.25,y-0.25)&&!wall(x-0.25,y-0.25);}
+function canMove(x,y){return!wall(x+0.3,y+0.3)&&!wall(x-0.3,y+0.3)&&!wall(x+0.3,y-0.3)&&!wall(x-0.3,y-0.3);}
 function upd(dt){
- if(!run)return; t+=dt/1000;
- let dx=0,dy=0; if(keys.up)dy=-1; if(keys.dn)dy=1; if(keys.lf)dx=-1; if(keys.rt)dx=1;
- let sp=2.8*dt/16*0.04; let nx=px+dx*sp, ny=py+dy*sp;
- if(canMove(nx,py)) px=nx; if(canMove(px,ny)) py=ny;
- npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0],py-p[1])<0.9){nt[i]=1;notes++; n.innerText='ЗАПИСКИ '+notes+'/3'; if(notes==3){run=false; end.style.display='flex'; tt.innerText='СБЕЖАЛ!';}}});
- if(t>6){let msp=1.2*dt/16*0.04; let best=null,bd=1e9; [[mx+msp,my],[mx-msp,my],[mx,my+msp],[mx,my-msp]].forEach(([tx,ty])=>{if(!canMove(tx,ty))return; let d=Math.hypot(px-tx,py-ty); if(d<bd){bd=d; best=[tx,ty];}}); if(best){mx=best[0]; my=best[1];} if(Math.hypot(px-mx,py-my)<0.6){run=false; end.style.display='flex'; tt.innerText='ПОЙМАЛ!';}}
- if(on){bat-=dt*0.005; if(bat<0)bat=0; bb.innerText='🔦'+(bat|0)+'%';}
+ if(!run)return; t+=dt/1000; pulse=80+Math.floor(t*2)+ (Math.hypot(px-mx,py-my)<5?40:0); bb.innerText='❤️ ПУЛЬС '+pulse;
+ let dx=0,dy=0; if(keys.up)dy=-1; if(keys.dn)dy=1; if(keys.lf)dx=-1; if(keys.rt)dx=1; let sp=2.6*dt/16*0.04; let nx=px+dx*sp, ny=py+dy*sp; if(canMove(nx,py)) px=nx; if(canMove(px,ny)) py=ny;
+ npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0],py-p[1])<0.8){nt[i]=1; notes++; n.innerText='ЗАПИСКИ '+notes+'/3 • '+msgs[i]; if(notes==3){run=false; end.style.display='flex'; tt.innerText='ВЫЖИЛ!'; pp.innerText='Ты нашел все записки. Но кровь на руках осталась...';}}});
+ if(t>4){let msp=1.1*dt/16*0.04; let best=null,bd=1e9; [[mx+msp,my],[mx-msp,my],[mx,my+msp],[mx,my-msp]].forEach(([tx,ty])=>{if(!canMove(tx,ty))return; let d=Math.hypot(px-tx,py-ty); if(d<bd){bd=d; best=[tx,ty];}}); if(best){mx=best[0]; my=best[1];} if(Math.hypot(px-mx,py-my)<0.65){run=false; scare=1; end.style.display='flex'; tt.innerText='ОН СЪЕЛ ТЕБЯ'; pp.innerText='Ты слышал как хрустят кости...';}}
 }
 function draw(){
- X.fillStyle='#1a2338'; X.fillRect(0,0,W,H);
- let cs=32, ox=W/2-px*cs, oy=H/2-py*cs;
- 
- X.fillStyle='#0f172a'; for(let y=0;y<14;y++) for(let x=0;x<20;x++) if(map[y][x]=='.') X.fillRect(x*cs+ox,y*cs+oy,cs,cs);
 
- for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#2a3a5c'; X.fillRect(x*cs+ox,y*cs+oy,cs,cs); X.fillStyle='#3d5a8c'; X.fillRect(x*cs+ox,y*cs+oy,cs,4); X.fillStyle='#1e2a44'; X.fillRect(x*cs+ox,y*cs+oy,4,cs);}
- 
- npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffcc00'; X.fillRect(p[0]*cs+ox+8,p[1]*cs+oy+6,14,18); X.fillStyle='#000'; X.font='bold 12px Arial'; X.fillText('!',p[0]*cs+ox+14,p[1]*cs+oy+19);}});
+ X.fillStyle='#1e253a'; X.fillRect(0,0,W,H);
+ let cs=34, ox=W/2-px*cs, oy=H/2-py*cs;
 
- X.fillStyle='#ff2233'; X.beginPath(); X.arc(mx*cs+ox+16,my*cs+oy+16,11,0,7); X.fill(); X.fillStyle='#fff'; X.beginPath(); X.arc(mx*cs+ox+12,my*cs+oy+13,3,0,7); X.arc(mx*cs+ox+20,my*cs+oy+13,3,0,7); X.fill();
-
- X.fillStyle='#00ff88'; X.shadowColor='#00ff88'; X.shadowBlur=15; X.beginPath(); X.arc(W/2,H/2,10,0,7); X.fill(); X.shadowBlur=0;
+ for(let y=0;y<map.length;y++) for(let x=0;x<20;x++){if(map[y][x]!='#'){X.fillStyle=(x+y)%2?'#162032':'#1a2842'; X.fillRect(x*cs+ox,y*cs+oy,cs,cs);}}
  
- let r=on?400+bat*2:180; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+800); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.5,'rgba(0,0,0,0)'); g.addColorStop(0.75,'rgba(0,0,0,0.5)'); g.addColorStop(1,'rgba(0,0,0,0.9)'); X.fillStyle=g; X.fillRect(0,0,W,H);
+ blood.forEach(b=>{X.fillStyle='rgba(180,0,0,.6)'; X.beginPath(); X.arc(b[0]*cs+ox+16,b[1]*cs+oy+16,6+Math.random()*4,0,7); X.fill(); X.fillStyle='rgba(255,0,0,.4)'; X.beginPath(); X.arc(b[0]*cs+ox+18,b[1]*cs+oy+14,3,0,7); X.fill();});
+
+ for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#2a344e'; X.fillRect(x*cs+ox,y*cs+oy,cs,cs); X.fillStyle='#1a2338'; X.fillRect(x*cs+ox,y*cs+oy,cs,6); X.fillStyle='rgba(120,0,0,.3)'; if((x*y)%7==0) X.fillRect(x*cs+ox,y*cs+oy+10,cs,8);}
+
+ for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='B'){X.fillStyle='#ff0000'; X.font='bold 14px Arial'; X.fillText('HELP',x*cs+ox+2,y*cs+oy+20);}
+ 
+ npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffeb3b'; X.fillRect(p[0]*cs+ox+6,p[1]*cs+oy+6,16,20); X.fillStyle='#000'; X.font='900 14px Arial'; X.fillText('!',p[0]*cs+ox+12,p[1]*cs+oy+20); X.fillStyle='#ff0000'; X.beginPath(); X.arc(p[0]*cs+ox+14,p[1]*cs+oy+26,3,0,7); X.fill();}});
+
+ X.fillStyle='#8b0000'; X.beginPath(); X.arc(mx*cs+ox+17,my*cs+oy+17,12,0,7); X.fill();
+ X.fillStyle='#000'; X.beginPath(); X.arc(mx*cs+ox+13,my*cs+oy+14,4,0,7); X.arc(mx*cs+ox+21,my*cs+oy+14,4,0,7); X.fill();
+ X.fillStyle='#ff0000'; X.beginPath(); X.arc(mx*cs+ox+13,my*cs+oy+14,1.5,0,7); X.arc(mx*cs+ox+21,my*cs+oy+14,1.5,0,7); X.fill();
+
+ X.strokeStyle='#ff0000'; X.lineWidth=2; X.beginPath(); X.arc(mx*cs+ox+17,my*cs+oy+22,4,0.2,Math.PI-0.2); X.stroke();
+
+ X.fillStyle='#00ff88'; X.shadowColor='#00ff88'; X.shadowBlur=20; X.beginPath(); X.arc(W/2,H/2,9,0,7); X.fill(); X.shadowBlur=0;
+ X.fillStyle='#fff'; X.font='10px Arial'; X.fillText('ТЫ',W/2-8,H/2-14);
+
+ let r=320; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+600); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.6,'rgba(0,0,0,0)'); g.addColorStop(0.85,'rgba(0,0,0,0.6)'); g.addColorStop(1,'rgba(0,0,0,0.92)'); X.fillStyle=g; X.fillRect(0,0,W,H);
+
+ if(Math.hypot(px-mx,py-my)<3){X.fillStyle='rgba(255,0,0,'+(0.15+Math.sin(t*10)*0.1)+')'; X.fillRect(0,0,W,H); X.fillStyle='#fff'; X.font='900 24px Arial'; X.fillText('ОН РЯДОМ!',W/2-70,60);}
 }
-let last=performance.now(); (function L(a){let dt=a-last; last=a; if(dt<50) upd(dt); draw(); requestAnimationFrame(L)})(last);
+let last=performance.now(); (function L(a){let dt=a-last; last=a; if(dt<50) upd(dt); draw(); if(scare){X.fillStyle='#ff0000'; X.fillRect(0,0,W,H); X.fillStyle='#fff'; X.font='900 60px Arial'; X.fillText('BOO!',W/2-70,H/2);} requestAnimationFrame(L)})(last);
 function bind(id,k){let e=document.getElementById(id); let s=ev=>{ev.preventDefault(); keys[k]=1;}; let en=ev=>{ev.preventDefault(); keys[k]=0;}; e.addEventListener('touchstart',s,{passive:false}); e.addEventListener('touchend',en,{passive:false}); e.addEventListener('touchcancel',en,{passive:false}); e.addEventListener('mousedown',s); window.addEventListener('mouseup',en);}
 bind('up','up'); bind('dn','dn'); bind('lf','lf'); bind('rt','rt');
-document.getElementById('fl').addEventListener('touchstart',e=>{e.preventDefault(); if(bat>0) on=!on;},{passive:false});
+document.getElementById('fl').addEventListener('touchstart',e=>{e.preventDefault(); if(navigator.vibrate) navigator.vibrate(200); X.fillStyle='#fff';},{passive:false});
 const end=document.getElementById('end'),tt=document.getElementById('tt'),pp=document.getElementById('pp'),n=document.getElementById('n'),bb=document.getElementById('bb');
 </script></body></html>
