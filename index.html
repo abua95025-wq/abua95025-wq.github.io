@@ -3,62 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>City Run 3D</title>
-<style>body{margin:0;background:#000;overflow:hidden}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;color:#fff;font:900 20px Arial;z-index:2;text-shadow:0 2px 6px #000}#over{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10}#over button{padding:14px 36px;border-radius:30px;border:0;background:#ffeb3b;font:900 18px Arial;margin-top:18px}</style>
+<title>M5 F90 City Drive</title>
+<style>body{margin:0;background:#111;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#fff;z-index:2;text-shadow:0 2px 4px #000}#pedals{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:15px;z-index:3}.btn{width:85px;height:85px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid #fff;color:#fff;font:900 14px Arial;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px)}#gas{background:rgba(46,204,113,.5)}#brake{background:rgba(231,76,60,.5)}</style>
 </head>
 <body>
-<div id="ui"><span>💰 <b id="c1">0</b></span><span id="s1">0m</span></div>
-<canvas id="cv"></canvas>
-<div id="over"><h1 style="color:#ffeb3b;font-size:42px">GAME OVER</h1><p id="ff"></p><button onclick="location.reload()">RESTART</button></div>
+<div id="ui"><span id="speed">0 KM/H</span><span>M5 F90</span></div>
+<canvas id="c"></canvas>
+<div id="pedals">
+<div style="display:flex;gap:12px"><div class="btn" id="left">◀ ЛЕВО</div><div class="btn" id="right">ПРАВО ▶</div></div>
+<div style="display:flex;gap:12px"><div class="btn" id="brake">ТОРМОЗ</div><div class="btn" id="gas">ГАЗ</div></div>
+</div>
 <script>
-cv=document.getElementById('cv');X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let L=[W*0.25,W*0.5,W*0.75],tar=1,px=W*0.5,py=H*0.8,y=py,vy=0,jp=0,rll=0,spd=5.5,coins=0,dst=0,objs=[],city=[],run=1,anim=0;
-for(let i=0;i<25;i++) city.push({x:(Math.random()-0.5)*W*1.5, h:100+Math.random()*220, w:50+Math.random()*70, c:Math.random()>0.5?'#263238':'#37474f'});
-let t=0;function add(tp,l,z){objs.push({tp,l,z,ok:0})}
-function upd(){
- if(!run) return; dst+=spd*0.07; s1.innerText=Math.floor(dst)+'m'; c1.innerText=coins; px+=(L[tar]-px)*0.16; anim+=spd*0.02;
- if(jp){vy+=0.8;y+=vy;if(y>=py){y=py;jp=0;vy=0}} if(rll){rll--; }
- t+=spd; if(t>100){t=0; let l=Math.floor(Math.random()*3); let r=Math.random();
-  if(r<0.32) add('train',l,-350);
-  else if(r<0.58) add('low',l,-350);
-  else if(r<0.78) add('high',l,-350);
-  if(Math.random()<0.7){let cl=Math.floor(Math.random()*3);for(let i=0;i<5;i++) add('coin',cl,-350-i*65)}
+const cv=document.getElementById('c'), ctx=cv.getContext('2d'); let W,H; function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(2,0,0,2,0,0)}R(); onresize=R;
+let car={x:0,y:0,ang:-Math.PI/2, speed:0, max:9, steer:0};
+let keys={gas:0,brake:0,left:0,right:0};
+let city=[];
+for(let i=0;i<60;i++) city.push({x:(Math.random()-0.5)*3000, y:(Math.random()-0.5)*3000, w:80+Math.random()*120, h:80+Math.random()*120});
+
+function update(){
+ if(keys.gas) car.speed+=0.18; else if(keys.brake) car.speed-=0.28; else car.speed*=0.985;
+ car.speed=Math.max(-3, Math.min(car.max, car.speed));
+ if(Math.abs(car.speed)>0.3){
+  if(keys.left) car.steer-=0.04; else if(keys.right) car.steer+=0.04; else car.steer*=0.85;
+  car.steer=Math.max(-0.08, Math.min(0.08, car.steer));
+  car.ang+=car.steer * (car.speed/4);
  }
- objs.forEach(o=>o.z+=spd); objs=objs.filter(o=>o.z<H+180);
- for(let o of objs){ if(o.ok) continue; if(o.z<py-60||o.z>py+15) continue; if(o.l!=tar) continue;
-  if(o.tp=='coin'){o.ok=1;coins++;} else if(o.tp=='train'){run=0;over.style.display='flex';ff.innerText=`${Math.floor(dst)}m | ${coins} монет`;return}
-  else if(o.tp=='low'){ if(!jp || y>py-25){run=0;over.style.display='flex';ff.innerText=`${Math.floor(dst)}m | ${coins} монет`;return}else o.ok=1}
-  else if(o.tp=='high'){ if(rll==0){run=0;over.style.display='flex';ff.innerText=`${Math.floor(dst)}m | ${coins} монет`;return}else o.ok=1}
- }
- if(spd<14) spd+=0.0022;
+ car.x+=Math.cos(car.ang)*car.speed;
+ car.y+=Math.sin(car.ang)*car.speed;
+ document.getElementById('speed').innerText=Math.abs(Math.floor(car.speed*22))+' KM/H';
 }
 function draw(){
- let g=X.createLinearGradient(0,0,0,H*0.5);g.addColorStop(0,'#29b6f6');g.addColorStop(1,'#e1f5fe');X.fillStyle=g;X.fillRect(0,0,W,H*0.5);
- city.forEach(b=>{let sx=W*0.5+(b.x)*0.25; X.fillStyle=b.c; X.fillRect(sx,H*0.5-b.h*0.35,b.w*0.35,b.h*0.35); X.fillStyle='#ffffff20'; for(let i=0;i<3;i++) X.fillRect(sx+6+i*10,H*0.5-b.h*0.35+8,4,6)});
- X.fillStyle='#424242';X.fillRect(0,H*0.5,W,H*0.5);
- X.strokeStyle='#616161'; for(let i=0;i<4;i++){let a=W*(0.06+i*0.27);let b=L[i]||W*0.9; X.beginPath();X.moveTo(a,H*0.5);X.lineTo(b,H);X.stroke()}
- objs.sort((a,b)=>a.z-b.z).forEach(o=>{
-  if(o.ok&&o.tp!='coin') return; if(o.z<-120) return; let p=o.z/H, sc=Math.max(0.2,p*1.12), Xp=W*0.5+(L[o.l]-W*0.5)*(0.18+p*0.82);
-  X.save();X.translate(Xp,o.z);X.scale(sc,sc);
-  if(o.tp=='coin'&&!o.ok){X.fillStyle='#ffeb3b';X.beginPath();X.arc(0,0,14,0,7);X.fill();X.strokeStyle='#ff6f00';X.lineWidth=3;X.stroke()}
-  else if(o.tp=='train'){X.fillStyle='#1565c0';X.fillRect(-54,-78,108,78);X.fillStyle='#0d47a1';X.fillRect(-54,-78,108,12);X.fillStyle='#81d4fa';X.fillRect(-34,-58,16,12);X.fillRect(18,-58,16,12)}
-  else if(o.tp=='low'){X.fillStyle='#ef6c00';X.fillRect(-40,-8,80,16)}
-  else if(o.tp=='high'){X.fillStyle='#ef6c00';X.fillRect(-44,-60,88,12);X.fillRect(-44,-60,10,70);X.fillRect(34,-60,10,70)}
-  X.restore();
+ ctx.fillStyle='#2c3e50'; ctx.fillRect(0,0,W,H);
+ ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-car.ang+Math.PI/2); ctx.translate(-car.x,-car.y);
+ // дороги сетка
+ ctx.strokeStyle='#34495e'; ctx.lineWidth=2; for(let i=-3000;i<=3000;i+=200){ ctx.beginPath(); ctx.moveTo(i,-3000); ctx.lineTo(i,3000); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-3000,i); ctx.lineTo(3000,i); ctx.stroke(); }
+ // дома
+ city.forEach(b=>{
+  // коллизия с домом - простой отталкивание
+  if(Math.abs(car.x-b.x)<b.w/2+22 && Math.abs(car.y-b.y)<b.h/2+22){ car.speed*=-0.4; }
+  ctx.fillStyle='#1a1a1a'; ctx.fillRect(b.x-b.w/2, b.y-b.h/2, b.w, b.h);
+  ctx.fillStyle='#2c2c2c'; ctx.fillRect(b.x-b.w/2+6, b.y-b.h/2+6, b.w-12, b.h-12);
+  ctx.fillStyle='#f1c40f'; for(let i=0;i<3;i++) for(let j=0;j<2;j++) ctx.fillRect(b.x-b.w/2+12+i*18, b.y-b.h/2+12+j*18, 6,6);
  });
- X.fillStyle='rgba(0,0,0,.22)';X.beginPath();X.ellipse(px,py+14,rll?26:16,5,0,0,7);X.fill();
- X.save();X.translate(px,y);if(rll)X.scale(1,0.55); let leg=Math.sin(anim)*12;
-  X.fillStyle='#ffeb3b';X.fillRect(-12,-42,24,24);
-  X.fillStyle='#111';X.fillRect(-12,-18+leg,10,20);X.fillRect(2,-18-leg,10,20);
-  X.fillStyle='#ffcc80';X.beginPath();X.arc(0,-52,15,0,7);X.fill();
-  X.fillStyle='#222';X.fillRect(-11,-62,22,7);
- X.restore();
+ // машина M5 F90 вид сверху
+ ctx.save(); ctx.translate(car.x,car.y); ctx.rotate(car.ang);
+ ctx.fillStyle='#000'; ctx.fillRect(-14,-24,28,48); // тень
+ ctx.fillStyle='#0a3d8f'; ctx.fillRect(-13,-26,26,46); // кузов синий M5
+ ctx.fillStyle='#111'; ctx.fillRect(-13,-26,26,6); ctx.fillRect(-13,18,26,8); // бамперы
+ ctx.fillStyle='#87ceeb'; ctx.fillRect(-11,-12,22,18); // стекло
+ ctx.fillStyle='#222'; ctx.fillRect(-15,-20,4,8); ctx.fillRect(11,-20,4,8); ctx.fillRect(-15,10,4,8); ctx.fillRect(11,10,4,8); // колеса
+ ctx.fillStyle='#ffeb3b'; ctx.fillRect(-10,-27,4,3); ctx.fillRect(6,-27,4,3); // фары
+ ctx.restore();
+ ctx.restore();
+ // мини машина по центру для красоты
+ ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(W/2,H/2+22,18,8,0,0,7); ctx.fill();
 }
-(function lp(){upd();draw();requestAnimationFrame(lp)})();
-function gl(){if(tar>0)tar--}function gr(){if(tar<2)tar++}function ju(){if(!jp&&!rll){jp=1;vy=-16}}function rl(){if(!jp&&!rll)rll=42}
-onkeydown=e=>{if(e.key=='ArrowLeft'||e.key=='a')gl();if(e.key=='ArrowRight'||e.key=='d')gr();if(e.key==' '||e.key=='ArrowUp'||e.key=='w')ju();if(e.key=='ArrowDown'||e.key=='s')rl()};
-let sx=0,sy=0;addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:false});
-addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)){dx<-20?gl():dx>20&&gr()}else{dy<-20?ju():dy>20&&rl()}},{passive:false});
+(function loop(){update();draw();requestAnimationFrame(loop)})();
+function bind(id,k){ const el=document.getElementById(id); const s=e=>{e.preventDefault();keys[k]=1}; const e=e=>{keys[k]=0}; el.addEventListener('touchstart',s,{passive:false}); el.addEventListener('touchend',e); el.addEventListener('mousedown',s); el.addEventListener('mouseup',e); el.addEventListener('mouseleave',e); }
+bind('gas','gas'); bind('brake','brake'); bind('left','left'); bind('right','right');
+addEventListener('keydown',e=>{ if(e.key=='ArrowUp'||e.key=='w') keys.gas=1; if(e.key=='ArrowDown'||e.key=='s') keys.brake=1; if(e.key=='ArrowLeft'||e.key=='a') keys.left=1; if(e.key=='ArrowRight'||e.key=='d') keys.right=1; });
+addEventListener('keyup',e=>{ if(e.key=='ArrowUp'||e.key=='w') keys.gas=0; if(e.key=='ArrowDown'||e.key=='s') keys.brake=0; if(e.key=='ArrowLeft'||e.key=='a') keys.left=0; if(e.key=='ArrowRight'||e.key=='d') keys.right=0; });
 </script>
 </body>
 </html>
