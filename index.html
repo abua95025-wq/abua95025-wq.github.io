@@ -3,129 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>BUBBLE POP</title>
-<style>
-html,body{margin:0;height:100%;background:#070a14;overflow:hidden;font-family:Arial Black}
-canvas{display:block;width:100vw;height:100vh}
-#ui{position:fixed;top:14px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;pointer-events:none;text-shadow:0 2px 10px #000}
-#ui #score{font-size:48px;line-height:1}
-#ui #best{font-size:11px;opacity:.6;letter-spacing:2px}
-#over{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10;text-align:center}
-#over button{padding:16px 48px;border-radius:30px;border:0;background:#6c5cff;color:#fff;font:900 18px Arial;margin-top:20px}
-</style>
+<title>ДОМ 13</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:0;left:0;right:0;padding:12px 16px;color:#fff;display:flex;justify-content:space-between;pointer-events:none;text-shadow:0 2px 10px #000;font-size:12px}#joy{position:fixed;bottom:20px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);pointer-events:auto}#stick{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.4)}#flash{position:fixed;bottom:20px;right:20px;width:70px;height:70px;border-radius:50%;background:rgba(255,200,0,.2);border:2px solid #ffcc00;display:flex;align-items:center;justify-content:center;color:#ffcc00;font:900 10px Arial;pointer-events:auto}#over{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10;text-align:center;padding:20px}#over h1{font-size:38px;margin:0}</style>
 </head>
 <body>
-<div id="ui"><div id="score">0</div><div id="best">ТАПАЙ ПУЗЫРИ • НЕ ПРОПУСТИ 5 ШТУК</div></div>
-<div id="over"><h1 style="font-size:44px;margin:0;color:#6c5cff">КОНЕЦ</h1><p id="final" style="opacity:.7"></p><button onclick="location.reload()">ЕЩЕ РАЗ</button></div>
+<div id="ui"><div id="notes">ЗАПИСКИ: 0/3</div><div id="bat">🔦 100%</div></div>
+<div id="joy"><div id="stick"></div></div><div id="flash">ФОНАРЬ</div>
+<div id="over"><h1 id="otitle">ТЫ УМЕР</h1><p id="otext"></p><button onclick="location.reload()" style="padding:14px 40px;border-radius:30px;border:0;background:#ffcc00;font:900 16px Arial;margin-top:20px">ЕЩЕ РАЗ</button></div>
 <canvas id="c"></canvas>
 <script>
-const cv=document.getElementById('c'), ctx=cv.getContext('2d');
-let W,H; function resize(){W=innerWidth;H=innerHeight;cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);} resize(); addEventListener('resize',resize);
-
-let bubbles=[], score=0, missed=0, run=true, lastSpawn=0;
-const colors=['#6c5cff','#00f2ff','#ff5c8a','#ffcc00','#00ff88'];
-
-function spawn(){
-  const r=26+Math.random()*22;
-  const x=r+Math.random()*(W-r*2);
-  const y=H+r+20;
-  const speed=1.2+Math.random()*1.8+score*0.02;
-  const col=colors[Math.floor(Math.random()*colors.length)];
-  bubbles.push({x,y,r,speed,col,pop:0});
-}
-
-function pop(b){
-  score++; document.getElementById('score').innerText=score;
-  b.pop=1; b.t=0;
-}
-
+const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
+let px=100,py=100, ang=0, keys={w:0,a:0,s:0,d:0}, bat=100, flashOn=true, notes=0, time=0, monster={x:400,y:400, active:false}, run=true;
+let map=[
+"####################",
+"#........#.........#",
+"#..###...#...###...#",
+"#..#.#...#...#.#...#",
+"#..###.......###...#",
+"#..................#",
+"####..#######..#####",
+"#.....#.....#......#",
+"#.....#..N..#..M...#",
+"#.....#.....#......#",
+"####..#######..#####",
+"#..................#",
+"#..###..#####..###.#",
+"#..#....#...#....#.#",
+"#..#....#...#....#.#",
+"#.......#...#......#",
+"####################"
+];
+let notePos=[{x:3,y:2},{x:15,y:8},{x:3,y:13}];
+let noteTaken=[0,0,0];
+function isWall(x,y){let gx=Math.floor(x/32), gy=Math.floor(y/32); if(gy<0||gy>=map.length||gx<0||gx>=map[0].length) return true; return map[gy][gx]=='#';}
 function update(dt){
-  if(!run) return;
-  lastSpawn+=dt;
-  if(lastSpawn> 520 - Math.min(400, score*6)){ lastSpawn=0; spawn(); if(score>15 && Math.random()<0.4) spawn(); }
+ if(!run) return; time+=dt/1000;
+ let mx=0,my=0; if(keys.w) my=-1; if(keys.s) my=1; if(keys.a) mx=-1; if(keys.d) mx=1;
+ let sp=1.2; if(time>20) sp=1.4;
+ let nx=px+mx*sp, ny=py+my*sp;
+ if(!isWall(nx,py)) px=nx; if(!isWall(px,ny)) py=ny;
 
-  for(let i=bubbles.length-1;i>=0;i--){
-    let b=bubbles[i];
-    if(b.pop){
-      b.t+=dt; b.r+=0.8;
-      if(b.t>220){ bubbles.splice(i,1); }
-    } else {
-      b.y-=b.speed;
-      b.x+=Math.sin(b.y*0.01)*0.4;
-      if(b.y<-b.r-30){
-        bubbles.splice(i,1);
-        missed++;
-        if(missed>=5){
-          run=false;
-          document.getElementById('over').style.display='flex';
-          document.getElementById('final').innerText=`Очков: ${score} | Мой рекорд: 127`;
-        }
-      }
-    }
-  }
+ notePos.forEach((n,i)=>{if(!noteTaken[i] && Math.hypot(px-n.x*32, py-n.y*32)<22){noteTaken[i]=1; notes++; document.getElementById('notes').innerText='ЗАПИСКИ: '+notes+'/3'; if(notes==3){document.getElementById('over').style.display='flex'; document.getElementById('otitle').innerText='ТЫ ВЫШЕЛ!'; document.getElementById('otext').innerText='Ты нашел все записки и сбежал из дома 13. Но оно запомнило тебя...'; run=false;}}});
+
+ if(time>12) monster.active=true;
+ if(monster.active){
+  let dx=px-monster.x, dy=py-monster.y, d=Math.hypot(dx,dy);
+  monster.x+=dx/d*0.7; monster.y+=dy/d*0.7;
+  if(d<20){run=false; document.getElementById('over').style.display='flex'; document.getElementById('otitle').innerText='ОНО СХВАТИЛО'; document.getElementById('otext').innerText='Ты слышал дыхание за спиной...'; }
+ }
+
+ if(flashOn){bat-=dt*0.008; if(bat<0) bat=0; document.getElementById('bat').innerText='🔦 '+Math.floor(bat)+'%'; if(bat==0) flashOn=false;}
 }
-
 function draw(){
-  ctx.clearRect(0,0,W,H);
+ X.fillStyle='#050507'; X.fillRect(0,0,W,H);
+ X.save(); X.translate(W/2,H/2); X.rotate(-ang); X.translate(-px,-py);
 
-  ctx.fillStyle='#070a14'; ctx.fillRect(0,0,W,H);
-  let g=ctx.createRadialGradient(W/2,H*0.7,0,W/2,H*0.7,H);
-  g.addColorStop(0,'rgba(108,92,255,.18)'); g.addColorStop(1,'rgba(7,10,20,0)');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+ for(let y=0;y<map.length;y++) for(let x=0;x<map[y].length;x++){if(map[y][x]=='#'){X.fillStyle='#0f0f14'; X.fillRect(x*32,y*32,32,32); X.fillStyle='#1a1a22'; X.fillRect(x*32+2,y*32+2,28,3);}}
 
-  bubbles.forEach(b=>{
-    if(b.pop){
-      ctx.globalAlpha=1-b.t/220;
-      ctx.strokeStyle=b.col; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.stroke();
-      ctx.globalAlpha=1;
-    } else {
-     
-      ctx.fillStyle=b.col;
-      ctx.globalAlpha=0.85;
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
-      ctx.globalAlpha=0.35;
-      ctx.fillStyle='#fff';
-      ctx.beginPath(); ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.28,0,Math.PI*2); ctx.fill();
-      ctx.globalAlpha=1;
-    }
-  });
+ notePos.forEach((n,i)=>{if(!noteTaken[i]){X.fillStyle='#ffcc00'; X.fillRect(n.x*32+10,n.y*32+10,12,16);}});
 
- 
-  ctx.fillStyle='rgba(255,255,255,.15)';
-  for(let i=0;i<5;i++){
-    ctx.beginPath();
-    ctx.arc(20+i*18, H-18, 5,0,Math.PI*2);
-    if(i<missed) {ctx.fillStyle='#ff4444'; ctx.fill(); ctx.fillStyle='rgba(255,255,255,.15)';}
-    else ctx.strokeStyle='rgba(255,255,255,.25)', ctx.lineWidth=1.5, ctx.stroke();
-  }
+ if(monster.active){X.fillStyle='#ff0000'; X.beginPath(); X.arc(monster.x,monster.y,10,0,7); X.fill();}
+
+ X.restore();
+
+ let rad= flashOn? 180+bat*0.8 : 40;
+ let grad=X.createRadialGradient(W/2,H/2,0,W/2,H/2,rad+400);
+ grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(0.2,'rgba(0,0,0,0)'); grad.addColorStop(0.4,'rgba(0,0,0,0.7)'); grad.addColorStop(1,'rgba(0,0,0,0.98)');
+ X.fillStyle=grad; X.fillRect(0,0,W,H);
+
+ X.fillStyle='#fff'; X.beginPath(); X.arc(W/2,H/2,4,0,7); X.fill();
 }
-
 let last=performance.now();
-(function loop(now){
-  let dt=now-last; last=now;
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
-})(performance.now());
+(function loop(t){let dt=t-last; last=t; update(dt); draw(); requestAnimationFrame(loop)})(performance.now());
 
-function hit(px,py){
-  if(!run) return;
-  for(let i=bubbles.length-1;i>=0;i--){
-    let b=bubbles[i];
-    if(b.pop) continue;
-    if(Math.hypot(px-b.x,py-b.y)<b.r+12){ pop(b); return; }
-  }
-}
-
-cv.addEventListener('touchstart',e=>{
-  e.preventDefault();
-  let t=e.touches[0]; hit(t.clientX,t.clientY);
-},{passive:false});
-cv.addEventListener('mousedown',e=> hit(e.clientX,e.clientY));
-
-
-spawn(); setTimeout(spawn,400);
+let joy=document.getElementById('joy'), stick=document.getElementById('stick'), drag=false, jx=0,jy=0;
+function handle(mx,my){let dx=mx-60, dy=my-60, d=Math.hypot(dx,dy); if(d>45){dx=dx/d*45; dy=dy/d*45;} stick.style.left=35+dx+'px'; stick.style.top=35+dy+'px'; keys.w=dy<-10; keys.s=dy>10; keys.a=dx<-10; keys.d=dx>10;}
+joy.addEventListener('touchstart',e=>{drag=true; let r=joy.getBoundingClientRect(); handle(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);},{passive:false});
+joy.addEventListener('touchmove',e=>{if(!drag) return; e.preventDefault(); let r=joy.getBoundingClientRect(); handle(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);},{passive:false});
+joy.addEventListener('touchend',()=>{drag=false; stick.style.left='35px'; stick.style.top='35px'; keys.w=0;keys.a=0;keys.s=0;keys.d=0;});
+document.getElementById('flash').onclick=()=>{if(bat>0) flashOn=!flashOn;};
+addEventListener('keydown',e=>{if(e.key=='w'||e.key=='ArrowUp')keys.w=1; if(e.key=='s'||e.key=='ArrowDown')keys.s=1; if(e.key=='a'||e.key=='ArrowLeft')keys.a=1; if(e.key=='d'||e.key=='ArrowRight')keys.d=1; if(e.key=='f') flashOn=!flashOn;});
+addEventListener('keyup',e=>{if(e.key=='w'||e.key=='ArrowUp')keys.w=0; if(e.key=='s'||e.key=='ArrowDown')keys.s=0; if(e.key=='a'||e.key=='ArrowLeft')keys.a=0; if(e.key=='d'||e.key=='ArrowRight')keys.d=0;});
 </script>
 </body>
 </html>
