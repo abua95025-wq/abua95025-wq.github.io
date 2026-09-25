@@ -44,7 +44,7 @@ function update(dt){
  if(!isWall(nx,py)) px=nx; if(!isWall(px,ny)) py=ny;
 
  notePos.forEach((n,i)=>{if(!noteTaken[i] && Math.hypot(px-n.x*32, py-n.y*32)<22){noteTaken[i]=1; notes++; document.getElementById('notes').innerText='ЗАПИСКИ: '+notes+'/3'; if(notes==3){document.getElementById('over').style.display='flex'; document.getElementById('otitle').innerText='ТЫ ВЫШЕЛ!'; document.getElementById('otext').innerText='Ты нашел все записки и сбежал из дома 13. Но оно запомнило тебя...'; run=false;}}});
- // monster
+
  if(time>12) monster.active=true;
  if(monster.active){
   let dx=px-monster.x, dy=py-monster.y, d=Math.hypot(dx,dy);
