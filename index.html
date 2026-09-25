@@ -1,14 +1,48 @@
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;background:#fff}canvas{width:100%;height:70vh;background:#87CEEB;display:block}#pad{display:flex;justify-content:center;gap:15px;padding:10px}.btn{width:70px;height:70px;background:#ddd;border:3px solid #000;border-radius:15px;font-size:30px;display:flex;align-items:center;justify-content:center}</style></head><body>
-<div style="background:#000;color:#ff0;text-align:center;padding:10px;font:900 18px Arial">ЗЕЛЕНЫЙ=ТЫ, КРАСНЫЙ=ВРАГ, ЖЕЛТЫЙ=БЕРИ</div>
-<canvas id="c"></canvas>
-<div id="pad"><div class="btn" id="L">◀</div><div class="btn" id="U">▲</div><div class="btn" id="D">▼</div><div class="btn" id="R">▶</div></div>
+<style>
+body{margin:0;background:#87CEEB;font-family:Arial}
+#field{position:relative;width:100%;height:400px;background:#a0e0ff;border:4px solid #000;overflow:hidden}
+#me{position:absolute;width:22px;height:22px;background:lime;border:3px solid #000;left:20px;top:20px;z-index:5}
+#enemy{position:absolute;width:24px;height:24px;background:red;border:3px solid #000;left:300px;top:300px}
+.coin{position:absolute;width:20px;height:20px;background:yellow;border:3px solid #000}
+.wall{position:absolute;background:#333}
+#pad{padding:10px;display:flex;justify-content:center;gap:12px;background:#222}
+.b{width:70px;height:70px;background:#fff;border:3px solid #000;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.b:active{background:yellow}
+</style></head><body>
+<div style="background:#000;color:yellow;text-align:center;padding:10px;font-weight:900">⬆️ ЗДЕСЬ ИГРА ⬆️ ЗЕЛЕНЫЙ = ТЫ</div>
+<div id="field">
+<div id="me"></div>
+<div id="enemy"></div>
+<div class="coin" style="left:150px;top:100px"></div>
+<div class="coin" style="left:250px;top:200px"></div>
+<div class="coin" style="left:100px;top:300px"></div>
+<div class="wall" style="left:100px;top:0;width:20px;height:300px"></div>
+<div class="wall" style="left:200px;top:100px;width:20px;height:300px"></div>
+</div>
+<div id="pad">
+<div class="b" id="L">◀</div>
+<div class="b" id="U">▲</div>
+<div class="b" id="D">▼</div>
+<div class="b" id="R">▶</div>
+</div>
 <script>
-let c=document.getElementById('c'), x=c.getContext('2d'), W=c.width=800, H=c.height=500;
-let px=30, py=30, mx=600, my=400, k={}, s=0, coins=[[200,200],[500,100],[300,350]];
-function draw(){x.fillStyle='#87CEEB'; x.fillRect(0,0,W,H); x.fillStyle='#444'; x.fillRect(150,0,20,400); x.fillRect(350,100,20,400); x.fillRect(0,250,500,20); x.fillStyle='yellow'; coins.forEach(o=>x.fillRect(o[0],o[1],18,18)); x.fillStyle='red'; x.fillRect(mx,my,22,22); x.fillStyle='lime'; x.fillRect(px,py,20,20);}
-setInterval(()=>{let dx=0,dy=0; if(k.U)dy=-4; if(k.D)dy=4; if(k.L)dx=-4; if(k.R)dx=4; px+=dx; py+=dy; if(px<0)px=0; if(py<0)py=0; if(px>780)px=780; if(py>480)py=480; mx+=(px>mx?1:-1)*0.7; my+=(py>my?1:-1)*0.7; coins=coins.filter(o=>Math.abs(o[0]-px)<20&&Math.abs(o[1]-py)<20?false:true); if(coins.length==0){alert('ПОБЕДА'); location.reload()} if(Math.abs(px-mx)<20&&Math.abs(py-my)<20){alert('ПОЙМАН'); location.reload()} draw();},20);
-['U','D','L','R'].forEach(id=>{let e=document.getElementById(id); e.ontouchstart=()=>k[id]=1; e.ontouchend=()=>k[id]=0; e.onmousedown=()=>k[id]=1; e.onmouseup=()=>k[id]=0;});
-draw();
+let me=document.getElementById('me'), en=document.getElementById('enemy'), fx=20, fy=20, ex=300, ey=300, k={}, coins=document.querySelectorAll('.coin'), got=0;
+setInterval(()=>{
+ if(k.U) fy-=4; if(k.D) fy+=4; if(k.L) fx-=4; if(k.R) fx+=4;
+ if(fx<0)fx=0; if(fy<0)fy=0; if(fx>350)fx=350; if(fy>370)fy=370;
+ me.style.left=fx+'px'; me.style.top=fy+'px';
+ if(fx>80&&fx<120&&fy<300) fx=80; // стена
+ if(fx>180&&fx<220&&fy>100) fx=180;
+ ex+=(fx>ex?1:-1)*0.8; ey+=(fy>ey?1:-1)*0.8;
+ en.style.left=ex+'px'; en.style.top=ey+'px';
+ coins.forEach(c=>{
+  let cx=parseInt(c.style.left), cy=parseInt(c.style.top);
+  if(Math.abs(cx-fx)<22&&Math.abs(cy-fy)<22&&c.style.display!='none'){c.style.display='none'; got++; if(got==3){alert('ПОБЕДА!'); location.reload();}}
+ });
+ if(Math.abs(ex-fx)<22&&Math.abs(ey-fy)<22){alert('ПОЙМАЛИ'); location.reload();}
+},20);
+function b(id,key){let e=document.getElementById(id); e.ontouchstart=(ev)=>{ev.preventDefault(); k[key]=1}; e.ontouchend=()=>k[key]=0; e.onmousedown=()=>k[key]=1; e.onmouseup=()=>k[key]=0; e.onmouseleave=()=>k[key]=0;}
+b('U','U'); b('D','D'); b('L','L'); b('R','R');
 </script></body></html>
