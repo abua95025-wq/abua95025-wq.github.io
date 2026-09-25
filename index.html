@@ -1,62 +1,85 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Subway Surf - Original Gameplay</title>
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px;color:#fff;font:900 20px Arial;text-shadow:0 2px 4px #000;z-index:2}#die{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:5;color:#fff}#die button{margin-top:20px;padding:14px 40px;border-radius:30px;border:0;background:#ffeb3b;font:900 18px Arial}</style></head>
-<body><div id="ui"><span>💰 <b id="co">0</b></span><span><b id="sc">0</b>m</span></div><canvas id="g"></canvas><div id="die"><h1 style="font-size:44px;color:#ffeb3b">WASTED!</h1><p id="f"></p><button onclick="location.reload()">RUN AGAIN</button></div>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Subway City Run</title>
+<style>*{margin:0;padding:0}body{background:#000;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;color:#fff;font-size:20px;text-shadow:0 2px 5px #000;z-index:10}#over{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:20}#over button{padding:15px 40px;border-radius:30px;border:0;background:#ffeb3b;font-weight:900;font-size:18px;margin-top:20px}</style>
+</head>
+<body>
+<div id="ui"><div>💰 <span id="coins">0</span></div><div id="score">0 m</div></div>
+<canvas id="c"></canvas>
+<div id="over"><h1 style="font-size:40px;color:#ffeb3b">СТОП!</h1><p id="final"></p><button onclick="location.reload()">ЗАНОВО</button></div>
 <script>
-c=document.getElementById('g');x=c.getContext('2d');let W,H,S=1;function R(){W=innerWidth;H=innerHeight;c.width=W*2;c.height=H*2;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let lane=1,tar=1,px=W/2,py=H*0.77,y=py,vy=0,jump=false,roll=false,rt=0,speed=11,score=0,coins=0,objs=[],t=0,run=true;
-function add(type,lane,z){objs.push({type,lane,z,hit:false})}
-function upd(){
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+let W,H; function res(){W=innerWidth;H=innerHeight;canvas.width=W*2;canvas.height=H*2;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(2,0,0,2,0,0)} res(); addEventListener('resize',res);
+let target=1, x=W/2, y=H*0.78, baseY=H*0.78, vy=0, jumping=false, rolling=false, rollT=0;
+let speed=6, coins=0, dist=0, objs=[], city=[], run=true;
+let lanes=[W*0.25,W*0.5,W*0.75];
+for(let i=0;i<20;i++) city.push({x:Math.random()*W*1.2-0.1*W, w:60+Math.random()*80, h:120+Math.random()*200});
+function add(type,l,z){ objs.push({type,l,z,hit:false}) }
+let spawnT=0;
+function update(){
  if(!run) return;
- score+=speed*0.12;co.innerText=coins;sc.innerText=Math.floor(score);
- px+=(W*(0.25+tar*0.25)-px)*0.15;
- if(jump){vy+=0.9;y+=vy;if(y>=py){y=py;jump=false;vy=0}}
- if(roll){rt--;if(rt<=0)roll=false}
- t+=speed; if(t>85){t=0;
+ dist+=speed*0.08; score.innerText=Math.floor(dist)+'m'; coinsEl.innerText=coins;
+ x+=(lanes[target]-x)*0.18;
+ if(jumping){ vy+=0.85; y+=vy; if(y>=baseY){y=baseY;jumping=false;vy=0} }
+ if(rolling){ rollT--; if(rollT<=0) rolling=false }
+ spawnT+=speed;
+ if(spawnT>95){
+  spawnT=0;
   let l=Math.floor(Math.random()*3);
   let r=Math.random();
-  if(r<0.4) add('train',l,-300);
-  else if(r<0.6) add('low',l,-300);
-  else if(r<0.8) add('high',l,-300);
-  if(Math.random()<0.8){ let cl=Math.floor(Math.random()*3); for(let i=0;i<6;i++) add('coin',cl,-300-i*55) }
+  if(r<0.3) add('train', l, -300);
+  else if(r<0.55) add('bar_low', l, -300);
+  else if(r<0.75) add('bar_high', l, -300);
+  if(Math.random()<0.75){ let cl=Math.floor(Math.random()*3); for(let i=0;i<5;i++) add('coin', cl, -300-i*60) }
  }
- objs.forEach(o=>o.z+=speed); objs=objs.filter(o=>o.z<H+200);
+ objs.forEach(o=>o.z+=speed);
+ objs=objs.filter(o=>o.z<H+200);
  for(let o of objs){
   if(o.hit) continue;
-  if(o.z<py-70||o.z>py+20) continue;
-  if(Math.abs(o.lane-tar)>0.1 && Math.abs(W*(0.25+o.lane*0.25)-px)>40) continue;
-  if(o.type==='coin'){o.hit=true;coins++}
-  else if(o.type==='train'){die();break}
-  else if(o.type==='low' && (!jump || y>py-35)){die();break}
-  else if(o.type==='high' &&!roll){die();break}
-  else if(o.type==='low'||o.type==='high') o.hit=true;
+  if(o.z < baseY-55 || o.z > baseY+18) continue;
+  if(o.l!== target) continue;
+  if(o.type==='coin'){ o.hit=true; coins++; }
+  else if(o.type==='train'){ return end(); }
+  else if(o.type==='bar_low'){ if(!jumping || y>baseY-30) return end(); else o.hit=true; }
+  else if(o.type==='bar_high'){ if(!rolling) return end(); else o.hit=true; }
  }
- if(speed<24) speed+=0.007;
+ if(speed < 15) speed+=0.0025;
 }
+function end(){ run=false; over.style.display='flex'; final.innerText=`Дистанция ${Math.floor(dist)}м | Монет ${coins}` }
 function draw(){
- x.clearRect(0,0,W,H);
- let g=x.createLinearGradient(0,0,0,H*0.48);g.addColorStop(0,'#4fc3f7');g.addColorStop(1,'#b3e5fc');x.fillStyle=g;x.fillRect(0,0,W,H*0.48);
- x.fillStyle='#616161';x.fillRect(0,H*0.48,W,H*0.52);
- x.strokeStyle='#757575'; for(let i=0;i<4;i++){let a=W*(0.08+i*0.28),b=W*(0.25+i*0.25*0.9);x.beginPath();x.moveTo(a,H*0.48);x.lineTo(b,H);x.stroke()}
- objs.sort((a,b)=>a.z-b.z); objs.forEach(o=>{
-  if(o.hit && o.type!=='coin') return;
-  if(o.z<-100) return;
-  let p=o.z/H, sc=Math.max(0.15,p*1.15), X=W*0.5+(W*(0.25+o.lane*0.25)-W*0.5)*(0.15+p*0.85);
-  x.save();x.translate(X,o.z);x.scale(sc,sc);
-  if(o.type==='coin'&&!o.hit){x.fillStyle='#ffeb3b';x.beginPath();x.arc(0,0,16,0,7);x.fill();x.fillStyle='#f57f17';x.font='bold 16px Arial';x.fillText('$',-5,6)}
-  else if(o.type==='train'){x.fillStyle='#1e88e5';x.fillRect(-50,-85,100,85);x.fillStyle='#0d47a1';x.fillRect(-50,-85,100,14);x.fillStyle='#bbdefb';x.fillRect(-30,-65,18,14);x.fillRect(12,-65,18,14)}
-  else if(o.type==='low'){x.fillStyle='#ef6c00';x.fillRect(-40,-10,80,20)}
-  else if(o.type==='high'){x.fillStyle='#ef6c00';x.fillRect(-40,-60,80,16);x.fillRect(-40,-60,10,70);x.fillRect(30,-60,10,70)}
-  x.restore();
+ let g=ctx.createLinearGradient(0,0,0,H*0.5); g.addColorStop(0,'#2196f3'); g.addColorStop(1,'#b3e5fc'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H*0.5);
+ city.forEach(b=>{
+  let sx = (b.x - W*0.5)*0.3 + W*0.5;
+  ctx.fillStyle='#37474f'; ctx.fillRect(sx, H*0.5-b.h*0.4, b.w*0.4, b.h*0.4);
+  ctx.fillStyle='#455a64'; for(let wy=0;wy<4;wy++) for(let wx=0;wx<3;wx++){ ctx.fillRect(sx+8+wx*12, H*0.5-b.h*0.4+8+wy*18, 6,8) }
  });
- x.fillStyle='rgba(0,0,0,0.2)';x.beginPath();x.ellipse(px,py+20,roll?30:20,6,0,0,7);x.fill();
- x.save();x.translate(px,y);if(roll)x.scale(1,0.5);x.fillStyle='#ffeb3b';x.fillRect(-14,-48,28,30);x.fillStyle='#1565c0';x.fillRect(-12,-18,24,24);x.fillStyle='#ffcc80';x.beginPath();x.arc(0,-58,18,0,7);x.fill();x.restore();
+ ctx.fillStyle='#424242'; ctx.fillRect(0,H*0.5,W,H*0.5);
+ ctx.strokeStyle='#616161'; ctx.lineWidth=2;
+ for(let i=0;i<=3;i++){ let x1=W*(0.05+i*0.28), x2=lanes[i]||W*0.95; ctx.beginPath(); ctx.moveTo(x1,H*0.5); ctx.lineTo(x2,H); ctx.stroke(); }
+ objs.sort((a,b)=>a.z-b.z);
+ objs.forEach(o=>{
+  if(o.hit && o.type!=='coin') return; if(o.z<-100) return;
+  let p=o.z/H, sc=Math.max(0.18,p*1.1), X=W*0.5+(lanes[o.l]-W*0.5)*(0.2+p*0.8);
+  ctx.save(); ctx.translate(X,o.z); ctx.scale(sc,sc);
+  if(o.type==='coin'&&!o.hit){ ctx.fillStyle='#ffeb3b'; ctx.strokeStyle='#ff8f00'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#e65100'; ctx.font='bold 16px Arial'; ctx.fillText('$',-4,5) }
+  else if(o.type==='train'){ ctx.fillStyle='#1565c0'; ctx.fillRect(-52,-80,104,80); ctx.fillStyle='#0d47a1'; ctx.fillRect(-52,-80,104,14); ctx.fillStyle='#90caf9'; ctx.fillRect(-32,-62,18,14); ctx.fillRect(14,-62,18,14); ctx.fillStyle='#222'; ctx.fillRect(-45,0,18,10); ctx.fillRect(27,0,18,10) }
+  else if(o.type==='bar_low'){ ctx.fillStyle='#ff5722'; ctx.fillRect(-42,-8,84,16); ctx.fillStyle='#fff'; ctx.fillRect(-42,-8,84,5) }
+  else if(o.type==='bar_high'){ ctx.fillStyle='#ff5722'; ctx.fillRect(-42,-55,84,14); ctx.fillRect(-42,-55,10,65); ctx.fillRect(32,-55,10,65) }
+  ctx.restore();
+ });
+ ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, baseY+16, rolling?28:18,6,0,0,Math.PI*2); ctx.fill();
+ ctx.save(); ctx.translate(x,y); if(rolling) ctx.scale(1,0.5);
+ ctx.fillStyle='#ffeb3b'; ctx.fillRect(-13,-44,26,26); ctx.fillStyle='#212121'; ctx.fillRect(-12,-18,24,22); ctx.fillStyle='#ffcc80'; ctx.beginPath(); ctx.arc(0,-54,16,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#212121'; ctx.fillRect(-10,-64,20,8); ctx.restore();
 }
-function die(){run=false;document.getElementById('die').style.display='flex';document.getElementById('f').innerText=`Score ${Math.floor(score)}m | Coins ${coins}`; }
-(function L(){upd();draw();requestAnimationFrame(L)})();
-function L(){if(tar>0)tar--}function Rr(){if(tar<2)tar++}function J(){if(!jump&&!roll){jump=true;vy=-19}}function Ro(){if(!jump&&!roll){roll=true;rt=38}}
-onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='a')L();if(e.key==='ArrowRight'||e.key==='d')Rr();if(e.key===' '||e.key==='ArrowUp'||e.key==='w')J();if(e.key==='ArrowDown'||e.key==='s')Ro()};
-let sx=0,sy=0;addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:false});
-addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)){dx<-20?L():dx>20&&Rr()}else{dy<-20?J():dy>20&&Ro()}},{passive:false});
-</script></body></html>
+const coinsEl=document.getElementById('coins'), score=document.getElementById('score'), over=document.getElementById('over'), final=document.getElementById('final');
+(function loop(){ update(); draw(); requestAnimationFrame(loop) })();
+function goL(){ if(target>0) target-- } function goR(){ if(target<2) target++ } function jump(){ if(!jumping&&!rolling){ jumping=true; vy=-17 } } function roll(){ if(!jumping&&!rolling){ rolling=true; rollT=40 } }
+addEventListener('keydown',e=>{ if(e.key==='ArrowLeft'||e.key==='a') goL(); if(e.key==='ArrowRight'||e.key==='d') goR(); if(e.key===' '||e.key==='ArrowUp'||e.key==='w') jump(); if(e.key==='ArrowDown'||e.key==='s') roll(); });
+let sx=0,sy=0; addEventListener('touchstart',e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY },{passive:false});
+addEventListener('touchend',e=>{ let dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy; if(Math.abs(dx)>Math.abs(dy)){ if(dx<-25) goL(); else if(dx>25) goR(); } else { if(dy<-25) jump(); else if(dy>25) roll(); } },{passive:false});
+</script>
+</body>
+</html>
