@@ -3,50 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>NIGHT RUNNER</title>
-<style>html,body{margin:0;background:#02050a;height:100%;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#hud{position:fixed;inset:0;pointer-events:none;color:#fff}#top{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;text-shadow:0 2px 10px #000}#ctrl{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:12px;pointer-events:auto;gap:10px}.b{flex:1;height:82px;border-radius:18px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;color:#fff;font:900 12px Arial;backdrop-filter:blur(10px)}#gas{background:rgba(0,255,136,.25);border-color:#00ff88}#over{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10}#over button{padding:14px 38px;border-radius:30px;border:0;background:#00ff88;font:900 16px Arial;margin-top:16px;color:#000}</style>
+<title>DUSHANBE HUSTLE</title>
+<style>html,body{margin:0;height:100%;background:#0a0e18;overflow:hidden;font-family:Arial Black}canvas{display:block;width:100vw;height:100vh}#ui{position:fixed;top:0;left:0;right:0;padding:10px 14px;display:flex;justify-content:space-between;color:#fff;pointer-events:none;text-shadow:0 2px 6px #000}#tap{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:space-between;padding:20px;pointer-events:auto}#t{width:46%;height:72%;border-radius:24px;background:rgba(255,255,255,.06);border:2px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font:900 14px Arial}#over{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10}#over button{padding:16px 44px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial}</style>
 </head>
 <body>
-<div id="hud"><div id="top"><div><div id="tm" style="font-size:36px">0.0s</div><div style="font-size:10px;opacity:.6;letter-spacing:1px">УХОД ОТ ПОГОНИ • M5 F90</div></div><div style="text-align:right"><div id="spd" style="font-size:22px">0 KM/H</div><div id="cop" style="font-size:10px;color:#ff3b3b">КОПОВ: 1</div></div></div><div id="ctrl"><div style="display:flex;flex:1;gap:10px"><div class="b" id="L">◀</div><div class="b" id="R">▶</div></div><div style="display:flex;flex:1;gap:10px"><div class="b" id="B">ТОРМОЗ</div><div class="b" id="G">ГАЗ</div></div></div></div>
-<div id="over"><h1 style="color:#ff3b3b;font-size:38px;margin:0">ПОЙМАЛИ</h1><p id="res"></p><button onclick="location.reload()">ЕЩЕ РАЗ</button></div>
+<div id="ui"><div><div id="sc" style="font-size:32px">0</div><div style="font-size:10px;opacity:.6">САМСЫ • DUSHANBE HUSTLE</div></div><div style="text-align:right"><div id="sp" style="font-size:20px">0 KM/H</div><div style="font-size:10px;opacity:.6">СКУТЕР 50CC</div></div></div>
+<div id="tap"><div id="t">◀ ЛЕВО</div><div id="t">ПРАВО ▶</div></div>
+<div id="over"><h1 style="font-size:48px;margin:0;color:#ffcc00">УПАЛ!</h1><p id="fr"></p><button onclick="location.reload()">ЕЩЕ ДОСТАВКУ</button></div>
 <canvas id="c"></canvas>
 <script>
-const cv=document.getElementById('c'), ctx=cv.getContext('2d'); let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(2,0,0,2,0,0)}R();onresize=R;
-let car={x:0,y:0,a:-1.57,v:0,vx:0,vy:0}, inp={l:0,r:0,g:0,b:0}, t=0, cops=[], traffic=[], smoke=[], run=true, copCount=1;
-let city=[]; for(let i=-30;i<=30;i++) for(let j=-30;j<=30;j++) if(Math.random()<0.55 && (i||j)) city.push({x:i*160+Math.random()*40,y:j*160+Math.random()*40,w:50+Math.random()*40,h:50+Math.random()*40});
-function spawnTraffic(){let ang=Math.random()*6.28; let d=800+Math.random()*600; traffic.push({x:car.x+Math.cos(ang)*d, y:car.y+Math.sin(ang)*d, a:ang+ (Math.random()-0.5)*0.5, v:1.5+Math.random()*2})}
-for(let i=0;i<12;i++) spawnTraffic();
-function spawnCop(){let ang=Math.random()*6.28; let d=400; cops.push({x:car.x+Math.cos(ang)*d, y:car.y+Math.sin(ang)*d, a:ang, v:0})}
-spawnCop();
-function update(){
- if(!run) return; t+=0.016;
- let acc=0; if(inp.g) acc=0.34; if(inp.b) acc=-0.7; car.v+=acc; if(!inp.g&&!inp.b) car.v*=0.985; car.v=Math.max(-3,Math.min(14,car.v));
- let turn=0; if(inp.l) turn=-1; if(inp.r) turn=1; if(Math.abs(car.v)>0.5) car.a+=turn*0.045*Math.max(0.4,Math.abs(car.v)/7);
- let cs=Math.cos(car.a), sn=Math.sin(car.a); let fwd=car.vx*cs+car.vy*sn; let side=car.vx*-sn+car.vy*cs; side*=0.88; fwd=car.v; car.vx=cs*fwd + -sn*side; car.vy=sn*fwd + cs*side; car.x+=car.vx; car.y+=car.vy;
- if(Math.abs(side)>2 && Math.abs(car.v)>4){smoke.push({x:car.x-cs*12,y:car.y-sn*12,a:0.5,s:2});}
- smoke.forEach(s=>{s.a-=0.02;s.s+=0.15}); smoke=smoke.filter(s=>s.a>0);
- traffic.forEach(tr=>{tr.x+=Math.cos(tr.a)*tr.v; tr.y+=Math.sin(tr.a)*tr.v; if(Math.hypot(tr.x-car.x,tr.y-car.y)>1200){tr.x=car.x+Math.cos(Math.random()*6.28)*900; tr.y=car.y+Math.sin(Math.random()*6.28)*900;} });
- cops.forEach(cp=>{let dx=car.x-cp.x, dy=car.y-cp.y, da=Math.atan2(dy,dx); let diff=da-cp.a; while(diff>3.14) diff-=6.28; while(diff<-3.14) diff+=6.28; cp.a+=diff*0.06; cp.v=Math.min(11+copCount*0.4, Math.hypot(car.vx,car.vy)*0.9+3.5); cp.x+=Math.cos(cp.a)*cp.v; cp.y+=Math.sin(cp.a)*cp.v; if(Math.hypot(cp.x-car.x,cp.y-car.y)<22){run=false; over.style.display='flex'; res.innerText=`Продержался ${t.toFixed(1)} сек | Скорость ${Math.abs(car.v*22|0)} км/ч`;}});
- if(Math.random()<0.01+ t*0.0002 && cops.length<6){spawnCop(); copCount++; cop.innerText='КОПОВ: '+cops.length;}
- if(traffic.length<14 && Math.random()<0.02) spawnTraffic();
- for(let b of city){if(Math.abs(car.x-b.x)<b.w/2+12 && Math.abs(car.y-b.y)<b.h/2+12){car.x-=car.vx*1.2; car.y-=car.vy*1.2; car.v*=0.4;}}
- tm.innerText=t.toFixed(1)+'s'; spd.innerText=Math.abs(car.v*22|0)+' KM/H';
+const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
+let lane=1, x=W/2, y=H*0.75, target=1, speed=5, score=0, objs=[], run=true, shake=0;
+let lanes=[W*0.25,W*0.5,W*0.75];
+function add(){let l=Math.floor(Math.random()*3);let r=Math.random(); if(r<0.55) objs.push({t:'car',l,z:-200,w:1}); else if(r<0.8) objs.push({t:'samsa',l,z:-200}); else objs.push({t:'dog',l,z:-200});}
+let tm=0;
+function upd(){
+ if(!run) return; tm+=speed; if(tm>90){tm=0; add(); if(Math.random()<0.5) add();}
+ x+=(lanes[target]-x)*0.18; speed+=0.004; if(speed>14) speed=14;
+ objs.forEach(o=>o.z+=speed); objs=objs.filter(o=>o.z<H+100);
+ for(let o of objs){ if(o.z< y-70 || o.z> y+20) continue; if(o.l!=target) continue;
+  if(o.t=='samsa'){o.z=9999; score++; sc.innerText=score; shake=6;}
+  else {run=false; over.style.display='flex'; fr.innerText=`Доставил ${score} самс | ${Math.floor(speed*18)} км/ч`; return;}
+ }
+ sp.innerText=Math.floor(speed*11)+' KM/H';
+ if(shake>0) shake--;
 }
 function draw(){
- ctx.fillStyle='#08101c'; ctx.fillRect(0,0,W,H);
- ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-car.a+1.57); ctx.translate(-car.x,-car.y);
- ctx.fillStyle='#0e1c2e'; ctx.fillRect(-7000,-7000,14000,14000);
- ctx.strokeStyle='#14243a'; ctx.lineWidth=90; for(let i=-7000;i<=7000;i+=160){ctx.beginPath();ctx.moveTo(i,-7000);ctx.lineTo(i,7000);ctx.stroke();ctx.beginPath();ctx.moveTo(-7000,i);ctx.lineTo(7000,i);ctx.stroke()}
- city.forEach(b=>{ctx.fillStyle='#0a1522'; ctx.fillRect(b.x-b.w/2-5,b.y-b.h/2-5,b.w+10,b.h+10); ctx.fillStyle='#13253a'; ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h); ctx.fillStyle='#1e3a5a'; for(let k=0;k<2;k++) ctx.fillRect(b.x-b.w/2+6+k*12,b.y-b.h/2+8,5,5)});
- traffic.forEach(tr=>{ctx.save();ctx.translate(tr.x,tr.y);ctx.rotate(tr.a);ctx.fillStyle='#d0d0d0';ctx.fillRect(-10,-18,20,36);ctx.fillStyle='#333';ctx.fillRect(-10,-18,20,6);ctx.restore()});
- smoke.forEach(s=>{ctx.globalAlpha=s.a*0.25; ctx.fillStyle='#99a'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,7); ctx.fill();}); ctx.globalAlpha=1;
- cops.forEach(cp=>{ctx.save();ctx.translate(cp.x,cp.y);ctx.rotate(cp.a);ctx.fillStyle='#fff';ctx.fillRect(-11,-20,22,40);ctx.fillStyle='#0a3daa';ctx.fillRect(-11,-8,22,16);ctx.fillStyle= (t*10%1>0.5)?'#ff0000':'#0000ff';ctx.fillRect(-11,-20,22,5);ctx.restore()});
- ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.a);ctx.fillStyle='rgba(0,0,0,.5)';ctx.beginPath();ctx.ellipse(0,8,13,24,0,0,7);ctx.fill();ctx.fillStyle='#0a3d8a';ctx.fillRect(-11,-22,22,44);ctx.fillStyle='#aed6f1';ctx.fillRect(-9,-5,18,10);ctx.fillStyle='#ffe600';ctx.fillRect(-8,-23,3,2);ctx.fillRect(5,-23,3,2);ctx.restore();
- ctx.restore();
+ X.fillStyle='#1a2a3a'; X.fillRect(0,0,W,H);
+ if(shake) X.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
+
+ X.fillStyle='#2a3a4a'; X.fillRect(0,H*0.15,W,H);
+ X.fillStyle='#ffcc00'; for(let i=0;i<H;i+=30){X.fillRect(W*0.33-2, H*0.15 + (i+tm*2)%H, 4,14); X.fillRect(W*0.66-2, H*0.15 + (i+tm*2)%H, 4,14);}
+
+ objs.sort((a,b)=>a.z-b.z).forEach(o=>{
+  if(o.z<-50) return; let p=o.z/H, sc=Math.max(0.2,p*1.1), Xp=W*0.5+(lanes[o.l]-W*0.5)*(0.2+p*0.8);
+  X.save(); X.translate(Xp,o.z); X.scale(sc,sc);
+  if(o.t=='samsa'){X.fillStyle='#ffcc00'; X.beginPath(); X.arc(0,0,16,0,7); X.fill(); X.fillStyle='#8d5524'; X.fillRect(-8,-3,16,6); X.fillStyle='#fff'; X.font='bold 12px Arial'; X.fillText('☀',-6,4);}
+  else if(o.t=='car'){X.fillStyle=o.l==1?'#e74c3c':'#3498db'; X.fillRect(-26,-40,52,72); X.fillStyle='#111'; X.fillRect(-22,-35,44,18); X.fillStyle='#87ceeb'; X.fillRect(-20,-30,40,10);}
+  else if(o.t=='dog'){X.fillStyle='#8d5524'; X.fillRect(-12,-12,24,24); X.beginPath(); X.arc(0,-18,10,0,7); X.fill();}
+  X.restore();
+ });
+ 
+ X.fillStyle='rgba(0,0,0,.25)'; X.beginPath(); X.ellipse(x,y+18,18,6,0,0,7); X.fill();
+ X.save(); X.translate(x,y); X.fillStyle='#ffcc00'; X.fillRect(-10,-22,20,14); X.fillStyle='#111'; X.fillRect(-14,0,28,6); X.fillStyle='#fff'; X.beginPath(); X.arc(0,-26,12,0,7); X.fill(); X.fillStyle='#111'; X.fillRect(-12,-34,24,6); X.restore();
+ if(shake) X.setTransform(2,0,0,2,0,0);
 }
-(function loop(){update();draw();requestAnimationFrame(loop)})();
-function bind(id,k){let e=document.getElementById(id);let d=v=>{v.preventDefault();inp[k]=1},u=v=>{inp[k]=0};e.addEventListener('touchstart',d,{passive:false});e.addEventListener('touchend',u);e.addEventListener('mousedown',d);e.addEventListener('mouseup',u);e.addEventListener('mouseleave',u);}bind('G','g');bind('B','b');bind('L','l');bind('R','r');
-addEventListener('keydown',e=>{if(e.code=='KeyW'||e.code=='ArrowUp')inp.g=1;if(e.code=='KeyS'||e.code=='ArrowDown')inp.b=1;if(e.code=='KeyA'||e.code=='ArrowLeft')inp.l=1;if(e.code=='KeyD'||e.code=='ArrowRight')inp.r=1});addEventListener('keyup',e=>{if(e.code=='KeyW'||e.code=='ArrowUp')inp.g=0;if(e.code=='KeyS'||e.code=='ArrowDown')inp.b=0;if(e.code=='KeyA'||e.code=='ArrowLeft')inp.l=0;if(e.code=='KeyD'||e.code=='ArrowRight')inp.r=0});
+(function L(){upd();draw();requestAnimationFrame(L)})();
+function go(d){if(d<0&&target>0)target--; if(d>0&&target<2)target++;}
+addEventListener('keydown',e=>{if(e.key=='ArrowLeft'||e.key=='a')go(-1);if(e.key=='ArrowRight'||e.key=='d')go(1);});
+let sx=0; addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:false});
+addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)<10){go(e.changedTouches[0].clientX<W/2?-1:1);}else{if(dx<-20)go(-1);else if(dx>20)go(1); }},{passive:false});
+document.querySelectorAll('#t').forEach((el,i)=>{el.addEventListener('touchstart',e=>{e.preventDefault();go(i==0?-1:1)},{passive:false})});
 </script>
 </body>
 </html>
