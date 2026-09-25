@@ -1,28 +1,57 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DOM 13</title>
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{width:100vw;height:100vh;display:block}#ui{position:fixed;top:10px;left:10px;right:10px;color:#fff;display:flex;justify-content:space-between;font:900 12px Arial}#joy{position:fixed;bottom:20px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid #fff3} #stick{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:#fff6}#btn{position:fixed;bottom:20px;right:20px;width:70px;height:70px;border-radius:50%;background:rgba(255,204,0,.3);border:2px solid #ffcc00;display:flex;align-items:center;justify-content:center;color:#ffcc00;font:900 10px Arial} #end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99;text-align:center}</style></head><body>
-<div id="ui"><div id="n">ЗАПИСКИ 0/3</div><div id="b">🔦100%</div></div><div id="joy"><div id="stick"></div></div><div id="btn">СВЕТ</div>
-<div id="end"><h1 id="t1">КОНЕЦ</h1><p id="t2"></p><button onclick="location.reload()" style="padding:14px 40px;border-radius:30px;border:0;background:#ffcc00;font:900 16px Arial">ЗАНОВО</button></div>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>ДОМ 13 FIX</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none}
+canvas{width:100vw;height:100vh;display:block}
+#ui{position:fixed;top:10px;left:0;right:0;padding:0 14px;color:#fff;display:flex;justify-content:space-between;font:900 13px Arial;pointer-events:none}
+#pad{position:fixed;bottom:10px;left:0;right:0;display:flex;justify-content:space-between;padding:0 10px;pointer-events:none}
+#leftpad,#rightpad{display:grid;grid-template-columns:60px 60px 60px;grid-template-rows:60px 60px;gap:8px;pointer-events:auto}
+.btn{width:60px;height:60px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font:900 22px Arial;user-select:none;-webkit-user-select:none}
+.btn:active{background:rgba(255,204,0,.5);border-color:#ffcc00}
+#end{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:99;text-align:center;padding:20px}
+</style></head><body>
+<div id="ui"><div id="n">ЗАПИСКИ 0/3</div><div id="b">🔦100%</div></div>
+<div id="pad">
+<div id="leftpad"><div></div><div class="btn" id="up">▲</div><div></div><div class="btn" id="left">◀</div><div class="btn" id="down">▼</div><div class="btn" id="right">▶</div></div>
+<div id="rightpad" style="align-items:end"><div class="btn" id="flash" style="width:80px;height:80px;background:rgba(255,204,0,.2);border-color:#ffcc00;color:#ffcc00;font-size:10px">СВЕТ<br>💡</div></div>
+</div>
+<div id="end"><h1 id="t1" style="font-size:36px;margin:0">КОНЕЦ</h1><p id="t2"></p><button onclick="location.reload()" style="padding:16px 50px;border-radius:30px;border:0;background:#ffcc00;font:900 18px Arial;margin-top:20px">ЗАНОВО</button></div>
 <canvas id="c"></canvas>
 <script>
-const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();
-let px=60,py=60,keys={},bat=100,on=true,notes=0,run=true,mx=400,my=400,t=0;
-let map=["####################","#........#.........#","#..###...#...###...#","#..................#","#..###..#####..###..#","#..................#","####..#######..#####","#.....#.....#......#","#.....#.....#......#","#.....#.....#......#","####..#######..#####","#..................#","#..###..#####..###.#","#..................#","#..................#","#..................#","####################"];
+const cv=document.getElementById('c'),X=cv.getContext('2d');let W,H;function R(){W=innerWidth;H=innerHeight;cv.width=W*2;cv.height=H*2;cv.style.width=W+'px';cv.style.height=H+'px';X.setTransform(2,0,0,2,0,0)}R();onresize=R;
+let px=60,py=60,keys={},bat=100,on=true,notes=0,run=true,mx=500,my=500,t=0;
+let map=["####################","#........#.........#","#..###...#...###...#","#..................#","#..###..#####..###..#","#..................#","####..#######..#####","#.....#.....#......#","####..#######..#####","#..................#","#..###..#####..###.#","#..................#","#..................#","#..................#","####################"];
 let npos=[[3,2],[15,8],[3,13]],nt=[0,0,0];
-function wall(x,y){let gx=(x/32|0),gy=(y/32|0);if(gy<0||gy>=map.length||gx<0||gx>=20) return true; return map[gy][gx]=='#';}
-function upd(dt){if(!run) return; t+=dt/1000; let dx=0,dy=0; if(keys.w)dy=-1; if(keys.s)dy=1; if(keys.a)dx=-1; if(keys.d)dx=1; let nx=px+dx*1.5, ny=py+dy*1.5; if(!wall(nx,py))px=nx; if(!wall(px,ny))py=ny;
- npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0]*32,py-p[1]*32)<25){nt[i]=1;notes++; document.getElementById('n').innerText='ЗАПИСКИ '+notes+'/3'; if(notes==3){run=false; end.style.display='flex'; t1.innerText='ТЫ СБЕЖАЛ'; t2.innerText='Нашел все записки!';}}});
- if(t>10){let d=Math.hypot(px-mx,py-my); mx+= (px-mx)/d*0.9; my+= (py-my)/d*0.9; if(d<20){run=false; end.style.display='flex'; t1.innerText='СХВАТИЛИ'; t2.innerText='Оно было за спиной';}}
- if(on){bat-=dt*0.007; if(bat<0)bat=0; b.innerText='🔦'+(bat|0)+'%'; if(bat==0)on=false;}}
-function draw(){X.fillStyle='#08080a';X.fillRect(0,0,W,H); X.save(); X.translate(W/2,H/2); X.translate(-px,-py);
- for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#14141c';X.fillRect(x*32,y*32,32,32);}
- npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffcc00';X.fillRect(p[0]*32+12,p[1]*32+12,8,10);}});
- X.fillStyle='#ff0000';X.beginPath();X.arc(mx,my,9,0,7);X.fill(); X.restore();
- let r=on?160+bat:35; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+500); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.25,'rgba(0,0,0,0.1)'); g.addColorStop(0.5,'rgba(0,0,0,0.85)'); g.addColorStop(1,'#000'); X.fillStyle=g; X.fillRect(0,0,W,H);
- X.fillStyle='#fff';X.beginPath();X.arc(W/2,H/2,3,0,7);X.fill();}
-(function L(a){let dt=a-(L.l||a); L.l=a; upd(dt); draw(); requestAnimationFrame(L)})(performance.now());
-let joy=document.getElementById('joy'),stick=document.getElementById('stick'),drag=false;
-function hdl(e){let rect=joy.getBoundingClientRect(); let cx=e.clientX-rect.left-60, cy=e.clientY-rect.top-60, d=Math.hypot(cx,cy); if(d>45){cx=cx/d*45; cy=cy/d*45;} stick.style.left=35+cx+'px'; stick.style.top=35+cy+'px'; keys.w=cy<-12; keys.s=cy>12; keys.a=cx<-12; keys.d=cx>12;}
-joy.addEventListener('touchstart',e=>{drag=true; hdl(e.touches[0]);},{passive:false}); joy.addEventListener('touchmove',e=>{if(!drag)return; e.preventDefault(); hdl(e.touches[0]);},{passive:false}); joy.addEventListener('touchend',()=>{drag=false; stick.style.left='35px'; stick.style.top='35px'; keys={};});
-document.getElementById('btn').onclick=()=>{if(bat>0) on=!on;}; addEventListener('keydown',e=>{if(e.key=='w')keys.w=1; if(e.key=='s')keys.s=1; if(e.key=='a')keys.a=1; if(e.key=='d')keys.d=1;}); addEventListener('keyup',e=>{if(e.key=='w')keys.w=0; if(e.key=='s')keys.s=0; if(e.key=='a')keys.a=0; if(e.key=='d')keys.d=0;});
+function wall(x,y){let gx=x/32|0,gy=y/32|0;if(gy<0||gy>=map.length||gx<0||gx>=20)return true;return map[gy][gx]=='#';}
+function upd(dt){
+ if(!run)return; t+=dt/1000;
+ let dx=0,dy=0; if(keys.up)dy=-1; if(keys.down)dy=1; if(keys.left)dx=-1; if(keys.right)dx=1;
+ let nx=px+dx*1.8, ny=py+dy*1.8;
+ if(!wall(nx,py))px=nx; if(!wall(px,ny))py=ny;
+ npos.forEach((p,i)=>{if(!nt[i]&&Math.hypot(px-p[0]*32,py-p[1]*32)<28){nt[i]=1;notes++; n.innerText='ЗАПИСКИ '+notes+'/3'; if(notes==3){run=false; end.style.display='flex'; t1.innerText='ТЫ СБЕЖАЛ!'; t2.innerText='Собрал все записки и выжил';}}});
+ if(t>8){let d=Math.hypot(px-mx,py-my); if(d>5){mx+=(px-mx)/d*1.0; my+=(py-my)/d*1.0;} if(d<22){run=false; end.style.display='flex'; t1.innerText='ПОЙМАЛИ'; t2.innerText='Оно было прямо за тобой...';}}
+ if(on){bat-=dt*0.008; if(bat<0)bat=0; b.innerText='🔦'+(bat|0)+'%'; if(bat==0)on=false;}
+}
+function draw(){
+ X.fillStyle='#07070a'; X.fillRect(0,0,W,H);
+ X.save(); X.translate(W/2,H/2); X.translate(-px,-py);
+ for(let y=0;y<map.length;y++) for(let x=0;x<20;x++) if(map[y][x]=='#'){X.fillStyle='#171723'; X.fillRect(x*32,y*32,32,32); X.fillStyle='#232335'; X.fillRect(x*32,y*32,32,4);}
+ npos.forEach((p,i)=>{if(!nt[i]){X.fillStyle='#ffcc00'; X.fillRect(p[0]*32+10,p[1]*32+10,12,14); X.fillStyle='#000'; X.fillRect(p[0]*32+12,p[1]*32+14,8,2);}});
+ X.fillStyle='#ff0022'; X.beginPath(); X.arc(mx,my,10,0,7); X.fill();
+ X.restore();
+ let r=on?190+bat:45; let g=X.createRadialGradient(W/2,H/2,0,W/2,H/2,r+600);
+ g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.3,'rgba(0,0,0,0.2)'); g.addColorStop(0.55,'rgba(0,0,0,0.88)'); g.addColorStop(1,'#000');
+ X.fillStyle=g; X.fillRect(0,0,W,H);
+ X.fillStyle='#fff'; X.beginPath(); X.arc(W/2,H/2,4,0,7); X.fill();
+}
+let last=performance.now(); (function loop(a){let dt=a-last; last=a; if(dt<100) upd(dt); draw(); requestAnimationFrame(loop)})(last);
+function bind(id,key){let el=document.getElementById(id);
+ let start=e=>{e.preventDefault(); keys[key]=1;}; let end=e=>{e.preventDefault(); keys[key]=0;};
+ el.addEventListener('touchstart',start,{passive:false}); el.addEventListener('touchend',end,{passive:false}); el.addEventListener('touchcancel',end,{passive:false});
+ el.addEventListener('mousedown',start); addEventListener('mouseup',end);
+}
+bind('up','up'); bind('down','down'); bind('left','left'); bind('right','right');
+document.getElementById('flash').addEventListener('touchstart',e=>{e.preventDefault(); if(bat>0) on=!on;},{passive:false});
+document.getElementById('flash').addEventListener('mousedown',e=>{if(bat>0) on=!on;});
+const end=document.getElementById('end'), t1=document.getElementById('t1'), t2=document.getElementById('t2'), n=document.getElementById('n'), b=document.getElementById('b');
 </script></body></html>
